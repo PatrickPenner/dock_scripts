@@ -8,3 +8,4 @@ from .docking_run import DockingRun
 from .prepare_receptor import ReceptorPreparation
 from .rmsd_analysis import RmsdAnalysis
 from .anchor import AnchorGenerator
+from .anchored_de_novo import AnchoredDeNovo

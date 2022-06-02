@@ -8,7 +8,7 @@ from pipeline import PipelineElement
 
 
 # intentionally sparse interface pylint: disable=too-few-public-methods
-class Spheres(PipelineElement):
+class SphereGeneration(PipelineElement):
     """Sphere generation for DOCK workflow"""
     def __init__(self, active_site, ligand, output, config):
         """Sphere generation for DOCK workflow
@@ -106,7 +106,7 @@ def main(args):
     logging.basicConfig(level=logging.DEBUG)
     config = configparser.ConfigParser()
     config.read(args.config)
-    spheres = Spheres(args.active_site, args.ligand, args.output, config)
+    spheres = SphereGeneration(args.active_site, args.ligand, args.output, config)
     spheres.run()
     print(spheres.selected_spheres)
     print(spheres.selected_spheres_pdb)

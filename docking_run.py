@@ -1,4 +1,4 @@
-"""Docking use DOCK"""
+"""Docking run using DOCK"""
 import argparse
 import configparser
 import logging
@@ -8,12 +8,12 @@ from pipeline import PipelineElement
 
 
 # intentionally sparse interface pylint: disable=too-few-public-methods
-class Dock(PipelineElement):
-    """Docking use DOCK"""
+class DockingRun(PipelineElement):
+    """Docking run using DOCK"""
 
     # prefer to explicitly list these arguments instead of putting them in config pylint: disable=too-many-arguments
     def __init__(self, ligand, spheres, grid, output, config):
-        """Docking use DOCK
+        """Docking run using DOCK
 
         :param ligand: ligand mol2 file
         :param spheres: spheres file
@@ -64,7 +64,7 @@ def main(args):
     logging.basicConfig(level=logging.DEBUG)
     config = configparser.ConfigParser()
     config.read(args.config)
-    dock = Dock(args.ligand, args.spheres, args.grid, args.output, config)
+    dock = DockingRun(args.ligand, args.spheres, args.grid, args.output, config)
     dock.run()
     print(dock.docked)
 

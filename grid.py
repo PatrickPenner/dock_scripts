@@ -8,7 +8,7 @@ from pipeline import PipelineElement
 
 
 # intentionally sparse interface pylint: disable=too-few-public-methods
-class Grid(PipelineElement):
+class GridGeneration(PipelineElement):
     """Grid generation for DOCK workflow"""
 
     def __init__(self, active_site, spheres, output, config):
@@ -24,7 +24,7 @@ class Grid(PipelineElement):
         self.spheres = spheres
         self.output = output
         self.config = config
-        self.grid = None
+        self.grid_prefix = None
 
     def run(self):
         """Run grid generation"""
@@ -32,7 +32,7 @@ class Grid(PipelineElement):
             os.mkdir(self.output)
 
         box = self.__create_box()
-        self.grid = self.__create_grid(box)
+        self.grid_prefix = self.__create_grid(box)
 
     def __create_box(self):
         box = os.path.join(self.output, 'box.pdb')
@@ -77,9 +77,9 @@ def main(args):
     logging.basicConfig(level=logging.DEBUG)
     config = configparser.ConfigParser()
     config.read(args.config)
-    grid = Grid(args.active_site, args.spheres, args.output, config)
+    grid = GridGeneration(args.active_site, args.spheres, args.output, config)
     grid.run()
-    print(grid.grid)
+    print(grid.grid_prefix)
 
 
 if __name__ == '__main__':

@@ -63,7 +63,7 @@ class GridGeneration(PipelineElement):
             grid_in = grid_template.read()
         grid_in = grid_in.format(
             active_site=os.path.relpath(self.active_site, self.output),
-            box=box,
+            box=os.path.relpath(box, self.output),
             vdw=self.config['Parameters']['vdw'],
             grid=os.path.relpath(self.grid_prefix, self.output)
         )

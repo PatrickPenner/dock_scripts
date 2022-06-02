@@ -44,9 +44,9 @@ class CrossDocking:
         )
         preparation_dir = os.path.join(self.output, 'prepare')
         self.__ligand_preparation = Preparation(
+            self.docking_ligand,
             preparation_dir,
             self.config,
-            ligand=self.docking_ligand
         )
         docking_dir = os.path.join(self.output, 'dock')
         self.__docking_run = DockingRun(

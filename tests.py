@@ -12,12 +12,35 @@ from docking_run import DockingRun
 from prepare_receptor import ReceptorPreparation
 from self_docking import SelfDocking
 from cross_docking import CrossDocking
+from protoss import ProtossRun
 
-logging.basicConfig(level=logging.ERROR)
+logging.basicConfig(level=logging.DEBUG)
+
+
+class ProtossRunTest(TestCase):
+    """Test protoss run"""
+
+    def setUp(self):
+        self.config = configparser.ConfigParser()
+        self.config.read('config.ini')
+        self.tmp_dir = TemporaryDirectory()
+
+    def test_run(self):
+        """Test protoss run"""
+        protein = os.path.abspath(os.path.join('test_files', '1cps.pdb'))
+        ligand = os.path.abspath(os.path.join('test_files', '1cps_ligand.sdf'))
+        protoss_run = ProtossRun(protein, self.tmp_dir.name, self.config, ligand=ligand).run()
+        self.assertTrue(os.path.exists(protoss_run.protonated_protein))
+        self.assertTrue(os.path.exists(protoss_run.protonated_ligand))
+        self.assertTrue(protoss_run.output_exists())
+
+    def tearDown(self):
+        self.tmp_dir.cleanup()
 
 
 class PreparationTest(TestCase):
     """Test preparation"""
+
     def setUp(self):
         self.config = configparser.ConfigParser()
         self.config.read('config.ini')
@@ -28,10 +51,10 @@ class PreparationTest(TestCase):
         protein = os.path.abspath(os.path.join('test_files', '1cps.pdb'))
         ligand = os.path.abspath(os.path.join('test_files', '1cps_ligand.sdf'))
         preparation = Preparation(
+            ligand,
             self.tmp_dir.name,
             self.config,
-            protein=protein,
-            ligand=ligand
+            protein=protein
         ).run()
         self.assertTrue(os.path.exists(preparation.converted_ligand))
         self.assertTrue(os.path.exists(preparation.active_site_mol2))
@@ -41,16 +64,9 @@ class PreparationTest(TestCase):
     def test_run_with_ligand(self):
         """Test ligand preparation"""
         ligand = os.path.abspath(os.path.join('test_files', '1cps_ligand.sdf'))
-        preparation = Preparation(self.tmp_dir.name, self.config, ligand=ligand).run()
+        preparation = Preparation(ligand, self.tmp_dir.name, self.config).run()
         self.assertTrue(os.path.exists(preparation.converted_ligand))
         self.assertTrue(preparation.output_exists())
-
-    def test_run_with_protein(self):
-        """Test ligand protein preparation (only performs protonation)"""
-        protein = os.path.abspath(os.path.join('test_files', '1cps.pdb'))
-        preparation = Preparation(self.tmp_dir.name, self.config, protein=protein).run()
-        self.assertTrue(protein != preparation.protein)
-        self.assertIn('_h', preparation.protein)
 
     def tearDown(self):
         self.tmp_dir.cleanup()
@@ -58,6 +74,7 @@ class PreparationTest(TestCase):
 
 class SphereGenerationTest(TestCase):
     """Test sphere generation"""
+
     def setUp(self):
         self.config = configparser.ConfigParser()
         self.config.read('config.ini')
@@ -65,8 +82,8 @@ class SphereGenerationTest(TestCase):
 
     def test_run(self):
         """Test sphere generation run"""
-        active_site = os.path.abspath(os.path.join('test_files', '1cps_active_site.pdb'))
-        ligand = os.path.abspath(os.path.join('test_files', '1cps_ligand_h.mol2'))
+        active_site = os.path.abspath(os.path.join('test_files', '1cps_h_active_site.pdb'))
+        ligand = os.path.abspath(os.path.join('test_files', '1cps_h_ligand.mol2'))
         sphere_generation = SphereGeneration(
             active_site,
             ligand,
@@ -83,6 +100,7 @@ class SphereGenerationTest(TestCase):
 
 class GridGenerationTest(TestCase):
     """Test grid generation"""
+
     def setUp(self):
         self.config = configparser.ConfigParser()
         self.config.read('config.ini')
@@ -90,7 +108,7 @@ class GridGenerationTest(TestCase):
 
     def test_run(self):
         """Test grid generation run"""
-        active_site = os.path.abspath(os.path.join('test_files', '1cps_active_site.mol2'))
+        active_site = os.path.abspath(os.path.join('test_files', '1cps_h_active_site.mol2'))
         selected_spheres = os.path.abspath(os.path.join('test_files', 'selected_spheres.sph'))
         grid_generation = GridGeneration(
             active_site,
@@ -108,6 +126,7 @@ class GridGenerationTest(TestCase):
 
 class DockingRunTest(TestCase):
     """Test docking run"""
+
     def setUp(self):
         self.config = configparser.ConfigParser()
         self.config.read('config.ini')
@@ -115,7 +134,7 @@ class DockingRunTest(TestCase):
 
     def test_run(self):
         """Test docking run"""
-        ligand = os.path.abspath(os.path.join('test_files', '1cps_ligand_h.mol2'))
+        ligand = os.path.abspath(os.path.join('test_files', '1cps_h_ligand.mol2'))
         selected_spheres = os.path.abspath(os.path.join('test_files', 'selected_spheres.sph'))
         grid_prefix = os.path.abspath(os.path.join('test_files', 'grid'))
         docking_run = DockingRun(
@@ -134,6 +153,7 @@ class DockingRunTest(TestCase):
 
 class ReceptorPreparationTest(TestCase):
     """Test receptor preparation"""
+
     def setUp(self):
         self.config = configparser.ConfigParser()
         self.config.read('config.ini')
@@ -159,6 +179,7 @@ class ReceptorPreparationTest(TestCase):
 
 class SelfDockingTest(TestCase):
     """Test self docking"""
+
     def setUp(self):
         self.config = configparser.ConfigParser()
         self.config.read('config.ini')
@@ -177,6 +198,7 @@ class SelfDockingTest(TestCase):
 
 class CrossDockingTest(TestCase):
     """Test cross docking"""
+
     def setUp(self):
         self.config = configparser.ConfigParser()
         self.config.read('config.ini')

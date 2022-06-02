@@ -1,0 +1,4 @@
+from chimera import runCommand as rc
+
+rc('open {ligand}')
+rc('write format mol2 #0 {converted_ligand}')

@@ -5,6 +5,7 @@ import logging
 import os
 
 from pipeline import PipelineElement, BASE_DIR
+from protoss import ProtossRun
 from prepare import Preparation
 from spheres import SphereGeneration
 from grid import GridGeneration
@@ -25,18 +26,26 @@ class ReceptorPreparation(PipelineElement):
         self.native_ligand = os.path.abspath(native_ligand)
         self.output = os.path.abspath(output)
         self.config = config
+        self.__protoss_run = None
         self.__preparation = None
         self.__sphere_generation = None
         self.__grid_generation = None
         self.__build_workflow()
 
     def __build_workflow(self):
+        protoss_dir = os.path.join(self.output, 'protoss')
+        self.__protoss_run = ProtossRun(
+            self.protein,
+            protoss_dir,
+            self.config,
+            ligand=self.native_ligand
+        )
         preparation_dir = os.path.join(self.output, 'prepare')
         self.__preparation = Preparation(
+            self.__protoss_run.protonated_ligand,
             preparation_dir,
             self.config,
-            protein=self.protein,
-            ligand=self.native_ligand
+            protein=self.__protoss_run.protonated_protein
         )
         sphere_generation_dir = os.path.join(self.output, 'spheres')
         self.__sphere_generation = SphereGeneration(
@@ -75,6 +84,10 @@ class ReceptorPreparation(PipelineElement):
         """
         if not os.path.exists(self.output):
             os.mkdir(self.output)
+
+        logging.debug('protoss')
+        if recalc or not self.__protoss_run.output_exists():
+            self.__protoss_run.run()
 
         logging.debug('preparation')
         if recalc or not self.__preparation.output_exists():

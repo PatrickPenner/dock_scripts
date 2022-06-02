@@ -3,7 +3,6 @@ import argparse
 import configparser
 import logging
 import os
-import subprocess
 
 from pipeline import BASE_DIR
 from prepare import Preparation
@@ -14,7 +13,7 @@ from docking_run import DockingRun
 class CrossDocking:
     """Cross-docking using the DOCK workflow"""
 
-    def __init__(self, protein, native_ligand, docking_ligand, output, config):
+    def __init__(self, protein, native_ligand, docking_ligand, output, config, docking_in=None):
         """Cross-docking using the DOCK workflow
 
         :param protein: protein pdb to dock into
@@ -22,12 +21,14 @@ class CrossDocking:
         :param docking_ligand: ligand to dock
         :param output: output directory for final and intermediate files
         :param config: config object
+        :param docking_in: DOCK input template file
         """
         self.protein = os.path.abspath(protein)
         self.native_ligand = os.path.abspath(native_ligand)
         self.docking_ligand = os.path.abspath(docking_ligand)
         self.output = os.path.abspath(output)
         self.config = config
+        self.docking_in = docking_in
         self.__receptor_preparation = None
         self.__ligand_preparation = None
         self.__docking_run = None
@@ -53,7 +54,8 @@ class CrossDocking:
             self.__receptor_preparation.selected_spheres,
             self.__receptor_preparation.grid_prefix,
             docking_dir,
-            self.config
+            self.config,
+            docking_in=self.docking_in
         )
 
     @property
@@ -87,17 +89,16 @@ def main(args):
     logging.basicConfig(level=logging.DEBUG)
     config = configparser.ConfigParser()
     config.read(args.config)
-    try:
-        cross_docking = CrossDocking(
-            args.protein,
-            args.native_ligand,
-            args.docking_ligand,
-            args.output,
-            config
-        )
-        cross_docking.run(args.recalc)
-    except subprocess.CalledProcessError as error:
-        logging.error(error.output.decode('utf8'))
+    cross_docking = CrossDocking(
+        args.protein,
+        args.native_ligand,
+        args.docking_ligand,
+        args.output,
+        config,
+        docking_in=args.docking_in
+    )
+    cross_docking.run(args.recalc)
+    print(cross_docking.docked)
 
 
 if __name__ == '__main__':
@@ -117,4 +118,5 @@ if __name__ == '__main__':
         help='path to a config file',
         default=os.path.join(BASE_DIR, 'config.ini')
     )
+    parser.add_argument('--docking_in', type=str, help='custom docking input file for DOCK')
     main(parser.parse_args())

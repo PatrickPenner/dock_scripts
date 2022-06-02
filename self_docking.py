@@ -12,18 +12,20 @@ from docking_run import DockingRun
 class SelfDocking:
     """Self-docking using the DOCK workflow"""
 
-    def __init__(self, protein, ligand, output, config):
+    def __init__(self, protein, ligand, output, config, docking_in=None):
         """Self-docking using the DOCK workflow
 
         :param protein: protein pdb to dock into
         :param ligand: both ligand for active site definition and ligand to dock
         :param output: output directory for final and intermediate files
         :param config: config object
+        :param docking_in: DOCK input template file
         """
         self.protein = os.path.abspath(protein)
         self.ligand = os.path.abspath(ligand)
         self.output = os.path.abspath(output)
         self.config = config
+        self.docking_in = docking_in
         self.__receptor_preparation = None
         self.__docking_run = None
         self.__build_workflow()
@@ -42,7 +44,8 @@ class SelfDocking:
             self.__receptor_preparation.selected_spheres,
             self.__receptor_preparation.grid_prefix,
             docking_dir,
-            self.config
+            self.config,
+            docking_in=self.docking_in
         )
 
     @property
@@ -72,7 +75,14 @@ def main(args):
     logging.basicConfig(level=logging.DEBUG)
     config = configparser.ConfigParser()
     config.read(args.config)
-    self_docking = SelfDocking(args.protein, args.ligand, args.output, config).run(args.recalc)
+    self_docking = SelfDocking(
+        args.protein,
+        args.ligand,
+        args.output,
+        config,
+        docking_in=args.docking_in
+    )
+    self_docking.run(args.recalc)
     print(self_docking.docked)
 
 
@@ -93,4 +103,5 @@ if __name__ == '__main__':
         help='path to a config file',
         default=os.path.join(BASE_DIR, 'config.ini')
     )
+    parser.add_argument('--docking_in', type=str, help='custom docking input file for DOCK')
     main(parser.parse_args())

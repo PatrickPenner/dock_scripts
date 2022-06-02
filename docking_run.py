@@ -10,20 +10,28 @@ from pipeline import PipelineElement, BASE_DIR
 class DockingRun(PipelineElement):
     """Docking run using DOCK"""
 
-    def __init__(self, ligand, spheres, grid, output, config):
+    def __init__(self, ligand, spheres, grid, output, config, docking_in=None):
         """Docking run using DOCK
+
+        The docking input file used is either user specified with docking_in or
+        an adapted FLX protocol docking input file from doi: 10.1002/jcc.23905.
 
         :param ligand: ligand mol2 file
         :param spheres: spheres file
         :param grid: grid prefix
         :param output: output directory to write to
         :param config: config object
+        :param docking_in: DOCK input template file
         """
         self.ligand = os.path.abspath(ligand)
         self.spheres = os.path.abspath(spheres)
         self.grid = grid
         self.output = os.path.abspath(output)
         self.config = config
+        self.docking_in = os.path.join(BASE_DIR, 'templates', 'FLX.in.template')
+        if docking_in:
+            PipelineElement._files_must_exist([docking_in])
+            self.docking_in = docking_in
         self.docked_prefix = docked_prefix = os.path.join(self.output, 'docked')
         self.docked = docked_prefix + '_scored.mol2'
 
@@ -34,8 +42,7 @@ class DockingRun(PipelineElement):
         if not os.path.exists(self.output):
             os.mkdir(self.output)
 
-        dock_template_path = os.path.join(BASE_DIR, 'templates', 'anchor_and_grow.in.template')
-        with open(dock_template_path) as dock_template:
+        with open(self.docking_in) as dock_template:
             dock_in = dock_template.read()
         dock_in = dock_in.format(
             ligand=os.path.relpath(self.ligand, self.output),
@@ -66,7 +73,14 @@ def main(args):
     logging.basicConfig(level=logging.DEBUG)
     config = configparser.ConfigParser()
     config.read(args.config)
-    dock = DockingRun(args.ligand, args.spheres, args.grid, args.output, config)
+    dock = DockingRun(
+        args.ligand,
+        args.spheres,
+        args.grid,
+        args.output,
+        config,
+        docking_in=args.docking_in
+    )
     dock.run()
     print(dock.docked)
 
@@ -84,4 +98,5 @@ if __name__ == '__main__':
         help='path to a config file',
         default=os.path.join(BASE_DIR, 'config.ini')
     )
+    parser.add_argument('--docking_in', type=str, help='custom docking input file for DOCK')
     main(parser.parse_args())

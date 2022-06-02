@@ -83,14 +83,10 @@ class Spheres(PipelineElement):
         selected_spheres_pdb = os.path.join(self.output, 'selected_spheres.pdb')
         with open('show_spheres.in.template') as show_spheres_template:
             show_spheres = show_spheres_template.read()
-        # we will be running showsphere in the spheres directory with relative paths
-        show_spheres = show_spheres.replace(
-            '{selected_spheres}', os.path.basename(self.selected_spheres))
-        show_spheres = show_spheres.replace(
-            '{selected_spheres_pdb}', os.path.basename(selected_spheres_pdb))
+        show_spheres = show_spheres.replace('{selected_spheres}', self.selected_spheres)
+        show_spheres = show_spheres.replace('{selected_spheres_pdb}', selected_spheres_pdb)
         PipelineElement._commandline(
             [self.config['Binaries']['showsphere']],
-            cwd=self.output,
             input=bytes(show_spheres, 'utf8')
         )
         return selected_spheres_pdb

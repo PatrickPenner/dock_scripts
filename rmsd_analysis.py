@@ -20,6 +20,7 @@ class RmsdAnalysis(PipelineElement):
 
     def run(self, _recalc=False):
         """Run RMSD analysis"""
+        PipelineElement._files_must_exist([self.docked_poses])
         with open(self.docked_poses) as poses_file:
             in_header = False
             for line in poses_file.readlines():

@@ -2,7 +2,7 @@
 import configparser
 import logging
 import os
-from tempfile import TemporaryDirectory
+from tempfile import TemporaryDirectory, NamedTemporaryFile
 from unittest import TestCase
 
 from prepare import Preparation
@@ -14,6 +14,8 @@ from self_docking import SelfDocking
 from cross_docking import CrossDocking
 from protoss import ProtossRun
 from rmsd_analysis import RmsdAnalysis
+from anchor import AnchorGenerator
+from anchored_docking import AnchoredDocking
 
 logging.basicConfig(level=logging.WARNING)
 
@@ -153,7 +155,7 @@ class DockingRunTest(TestCase):
         ligand = os.path.abspath(os.path.join('test_files', '1cps_h_ligand.mol2'))
         selected_spheres = os.path.abspath(os.path.join('test_files', 'selected_spheres.sph'))
         grid_prefix = os.path.abspath(os.path.join('test_files', 'grid'))
-        docking_in = os.path.abspath(os.path.join('templates', 'FAD.in.template'))
+        docking_in = os.path.abspath(os.path.join('templates', 'FLX.in.template'))
         docking_run = DockingRun(
             ligand,
             selected_spheres,
@@ -263,6 +265,7 @@ class CrossDockingTest(TestCase):
 
 class RmsdAnalysisTest(TestCase):
     """Test rmsd analysis"""
+
     def test_run(self):
         """Test rmsd analysis run"""
         docked_poses = os.path.abspath(os.path.join('test_files', 'docked_scored.mol2'))
@@ -272,3 +275,45 @@ class RmsdAnalysisTest(TestCase):
         self.assertIsNotNone(rmsd_analysis.top_rmsd_m)
         self.assertIsNotNone(rmsd_analysis.top_rmsd)
         self.assertTrue(rmsd_analysis.output_exists())
+
+
+class AnchorGeneratorTest(TestCase):
+    """Test anchor generator"""
+
+    def test_run(self):
+        """Test anchor generator run"""
+        prepared_ligand = os.path.join('test_files', '1cbx_ligand.mol2')
+        template = os.path.join('test_files', '1cbx_core.mol2')
+        output_file = NamedTemporaryFile(suffix='anchored_dock.in')
+        anchor_generator = AnchorGenerator(prepared_ligand, template, output_file.name).run()
+        self.assertIn('C2,2', output_file.read().decode('utf8'))
+        self.assertTrue(anchor_generator.output_exists())
+        output_file.close()
+
+
+class AnchoredDockingTest(TestCase):
+    """Test anchored docking"""
+
+    def setUp(self):
+        self.config = configparser.ConfigParser()
+        self.config.read('config.ini')
+        self.tmp_dir = TemporaryDirectory()
+
+    def test_run(self):
+        """Test anchored docking run"""
+        protein = os.path.abspath(os.path.join('test_files', '1cps.pdb'))
+        native_ligand = os.path.abspath(os.path.join('test_files', '1cps_ligand.sdf'))
+        docking_ligand = os.path.abspath(os.path.join('test_files', '1cbx_ligand.sdf'))
+        template = os.path.abspath(os.path.join('test_files', '1cbx_core.mol2'))
+        cross_docking = AnchoredDocking(
+            protein,
+            native_ligand,
+            docking_ligand,
+            template,
+            self.tmp_dir.name,
+            self.config
+        ).run()
+        self.assertTrue(os.path.exists(cross_docking.docked))
+
+    def tearDown(self):
+        self.tmp_dir.cleanup()

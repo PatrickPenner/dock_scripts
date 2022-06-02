@@ -1,4 +1,5 @@
 amber_score_secondary                                        no
+atom_in_anchor                                               {anchor}
 atom_model                                                   all
 bump_filter                                                  no
 calculate_rmsd                                               no
@@ -25,9 +26,10 @@ internal_energy_cutoff                                       100.0
 internal_energy_rep_exp                                      12
 ligand_atom_file                                             {ligand}
 ligand_outfile_prefix                                        {docked_prefix}
-limit_max_anchors                                            no
+limit_max_anchors                                            yes
 limit_max_ligands                                            no
-min_anchor_size                                              5
+max_anchor_num                                               1
+min_anchor_size                                              1
 minimize_anchor                                              yes
 minimize_flexible_growth                                     yes
 minimize_ligand                                              yes
@@ -60,7 +62,7 @@ use_advanced_simplex_parameters                              no
 use_clash_overlap                                            no
 use_database_filter                                          no
 use_internal_energy                                          yes
-user_specified_anchor                                        no
+user_specified_anchor                                        yes
 vdw_defn_file                                                {vdw}
 write_conformations                                          no
 write_fragment_libraries                                     no

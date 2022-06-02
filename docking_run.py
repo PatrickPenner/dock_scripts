@@ -40,7 +40,6 @@ class DockingRun(PipelineElement):
         self.config = config
         self.docking_in = os.path.join(BASE_DIR, 'templates', 'FLX.in.template')
         if docking_in:
-            PipelineElement._files_must_exist([docking_in])
             self.docking_in = docking_in
         elif rmsd_reference:
             self.docking_in = os.path.join(BASE_DIR, 'templates', 'FLX_rmsd_reference.in.template')
@@ -51,7 +50,7 @@ class DockingRun(PipelineElement):
     def run(self, _recalc=False):
         """Run docking"""
         # grid is a prefix not a file
-        PipelineElement._files_must_exist([self.ligand, self.spheres])
+        PipelineElement._files_must_exist([self.ligand, self.spheres, self.docking_in])
         if not os.path.exists(self.output):
             os.mkdir(self.output)
 

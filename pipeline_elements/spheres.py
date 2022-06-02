@@ -1,4 +1,8 @@
-"""Sphere generation for DOCK workflow"""
+"""Sphere generation for DOCK workflow
+
+Should be compatible with both the fortran as well as cpp sphgen
+implementations.
+"""
 import argparse
 import configparser
 import logging
@@ -8,10 +12,17 @@ from pipeline_elements import PipelineElement, BASE_DIR
 
 
 class SphereGeneration(PipelineElement):
-    """Sphere generation for DOCK workflow"""
+    """Sphere generation for DOCK workflow
+
+    Should be compatible with both the fortran as well as cpp sphgen
+    implementations.
+    """
 
     def __init__(self, active_site, ligand, output, config):
         """Sphere generation for DOCK workflow
+
+        Should be compatible with both the fortran as well as cpp sphgen
+        implementations.
 
         :param active_site: active site pdb file
         :param ligand: ligand mol2 file
@@ -67,15 +78,17 @@ class SphereGeneration(PipelineElement):
         with open(os.path.join(self.output, 'INSPH'), 'w') as insph_file:
             insph_file.write(insph)
         outsph = os.path.join(self.output, 'OUTSPH')
-        # if outsph exists sphgen won't run, remove it if necessary
+        # if output exists sphgen won't run, remove it if necessary
         if os.path.exists(outsph):
             os.remove(outsph)
+        if os.path.exists(sphere_clusters):
             os.remove(sphere_clusters)
         PipelineElement._commandline([self.config['Binaries']['sphgen']], self.output)
-        PipelineElement._files_must_exist([outsph, sphere_clusters])
-        # logging for sphgen is written to OUTSPH, log it to debug
-        with open(outsph) as outsph_file:
-            logging.debug(outsph_file.read())
+        PipelineElement._files_must_exist([sphere_clusters])
+        # logging for fortran sphgen is written to OUTSPH, log it to debug if it exists
+        if os.path.exists(outsph):
+            with open(outsph) as outsph_file:
+                logging.debug(outsph_file.read())
         return sphere_clusters
 
     def __select_spheres(self, sphere_clusters):

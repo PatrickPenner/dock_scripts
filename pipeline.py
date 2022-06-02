@@ -2,6 +2,7 @@
 from abc import ABC, abstractmethod
 import logging
 import subprocess
+import os
 
 
 # intentionally sparse interface pylint: disable=too-few-public-methods
@@ -21,3 +22,9 @@ class PipelineElement(ABC):
         output = subprocess.check_output(args, cwd=cwd, input=input, stderr=subprocess.STDOUT)
         if output:
             logging.debug(output.decode('utf8'))
+
+    @staticmethod
+    def _files_exist(files):
+        for current_file in files:
+            if not os.path.exists(current_file):
+                raise RuntimeError('Did not find expected file: {}'.format(current_file))

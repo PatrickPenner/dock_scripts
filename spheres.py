@@ -18,6 +18,7 @@ class Spheres(PipelineElement):
         :param output: output directory to write files to
         :param config: config object
         """
+        PipelineElement._files_exist([active_site, ligand])
         self.active_site = active_site
         self.ligand = ligand
         self.output = output
@@ -46,15 +47,18 @@ class Spheres(PipelineElement):
             '-o', surface
         ]
         PipelineElement._commandline(args)
+        PipelineElement._files_exist([surface])
         return surface
 
     def __generate_spheres(self, surface):
         sphere_clusters = os.path.join(self.output, 'rec.sph')
-        with open('INSPH.template') as insph_template:
+        with open('templates/INSPH.template') as insph_template:
             insph = insph_template.read()
         # we will be running sphgen in the spheres directory with relative paths
-        insph = insph.replace('{surface}', os.path.basename(surface))
-        insph = insph.replace('{spheres}', os.path.basename(sphere_clusters))
+        insph = insph.format(
+            surface=os.path.basename(surface),
+            spheres=os.path.basename(sphere_clusters)
+        )
         with open(os.path.join(self.output, 'INSPH'), 'w') as insph_file:
             insph_file.write(insph)
         outsph = os.path.join(self.output, 'OUTSPH')
@@ -63,6 +67,7 @@ class Spheres(PipelineElement):
             os.remove(outsph)
             os.remove(sphere_clusters)
         PipelineElement._commandline([self.config['Binaries']['sphgen']], self.output)
+        PipelineElement._files_exist([outsph, sphere_clusters])
         # logging for sphgen is written to OUTSPH, log it to debug
         with open(outsph) as outsph_file:
             logging.debug(outsph_file.read())
@@ -77,18 +82,22 @@ class Spheres(PipelineElement):
             self.config['Parameters']['sphere_radius']
         ]
         PipelineElement._commandline(args, cwd=self.output)
+        PipelineElement._files_exist([selected_spheres])
         return selected_spheres
 
     def __show_spheres(self):
         selected_spheres_pdb = os.path.join(self.output, 'selected_spheres.pdb')
-        with open('show_spheres.in.template') as show_spheres_template:
+        with open('templates/show_spheres.in.template') as show_spheres_template:
             show_spheres = show_spheres_template.read()
-        show_spheres = show_spheres.replace('{selected_spheres}', self.selected_spheres)
-        show_spheres = show_spheres.replace('{selected_spheres_pdb}', selected_spheres_pdb)
+        show_spheres = show_spheres.format(
+            selected_spheres=self.selected_spheres,
+            selected_spheres_pdb=selected_spheres_pdb
+        )
         PipelineElement._commandline(
             [self.config['Binaries']['showsphere']],
             input=bytes(show_spheres, 'utf8')
         )
+        PipelineElement._files_exist([selected_spheres_pdb])
         return selected_spheres_pdb
 
 

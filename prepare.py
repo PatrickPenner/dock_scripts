@@ -23,6 +23,7 @@ class Preparation(PipelineElement):
         :param output: output directory for final and intermediate files
         :param config: config object
         """
+        PipelineElement._files_exist([protein, ligand])
         self.protein = protein
         self.pdb, _extension = os.path.splitext(os.path.basename(self.protein))
         self.ligand = ligand
@@ -53,6 +54,7 @@ class Preparation(PipelineElement):
             '--ligand_output', protonated_ligand
         ]
         PipelineElement._commandline(args)
+        PipelineElement._files_exist([protonated_protein, protonated_ligand])
         return protonated_protein, protonated_ligand
 
     def __clean_binding_site(self, protonated_protein):
@@ -64,19 +66,22 @@ class Preparation(PipelineElement):
             '-c', clean_protein
         ]
         PipelineElement._commandline(args)
+        PipelineElement._files_exist([clean_protein])
         return clean_protein
 
     def __write_active_site(self, clean_protein):
         # I wrote a python script in a python script so I could write python while I write python
         active_site_pdb = os.path.join(self.output, self.pdb + '_active_site.pdb')
         active_site_mol2 = os.path.join(self.output, self.pdb + '_active_site.mol2')
-        with open('write_active_site.py.template') as script_template:
+        with open('templates/write_active_site.py.template') as script_template:
             script = script_template.read()
-        script = script.replace('{protein}', clean_protein)
-        script = script.replace('{ligand}', self.ligand)
-        script = script.replace('{radius}', self.config['Parameters']['active_site_radius'])
-        script = script.replace('{active_site_pdb}', active_site_pdb)
-        script = script.replace('{active_site_mol2}', active_site_mol2)
+        script = script.format(
+            protein=clean_protein,
+            ligand=self.ligand,
+            radius=self.config['Parameters']['active_site_radius'],
+            active_site_pdb=active_site_pdb,
+            active_site_mol2=active_site_mol2
+        )
         script_path = os.path.join(self.output, 'write_active_site.py')
         logging.debug(script)
         with open(script_path, 'w') as script_file:
@@ -87,6 +92,7 @@ class Preparation(PipelineElement):
             script_path
         ]
         PipelineElement._commandline(args)
+        PipelineElement._files_exist([active_site_pdb, active_site_mol2])
         return active_site_pdb, active_site_mol2
 
     def __convert_ligand(self, protonated_ligand):
@@ -97,6 +103,7 @@ class Preparation(PipelineElement):
             '-o', converted_ligand
         ]
         PipelineElement._commandline(args)
+        PipelineElement._files_exist([converted_ligand])
         return converted_ligand
 
 

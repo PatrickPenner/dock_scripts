@@ -19,6 +19,7 @@ class Grid(PipelineElement):
         :param output: output directory to write to
         :param config: config object
         """
+        PipelineElement._files_exist([active_site, spheres])
         self.active_site = active_site
         self.spheres = spheres
         self.output = output
@@ -35,24 +36,30 @@ class Grid(PipelineElement):
 
     def __create_box(self):
         box = os.path.join(self.output, 'box.pdb')
-        with open('box.in.template') as box_template:
+        with open('templates/box.in.template') as box_template:
             box_in = box_template.read()
-        box_in = box_in.replace('{spheres}', self.spheres)
-        box_in = box_in.replace('{box}', box)
+        box_in = box_in.format(
+            spheres=self.spheres,
+            box=box
+        )
+        logging.debug(box_in)
         PipelineElement._commandline(
             [self.config['Binaries']['showbox']],
             input=bytes(box_in, 'utf8')
         )
+        PipelineElement._files_exist([box])
         return box
 
     def __create_grid(self, box):
         grid = os.path.join(self.output, 'grid')
-        with open('grid.in.template') as grid_template:
+        with open('templates/grid.in.template') as grid_template:
             grid_in = grid_template.read()
-        grid_in = grid_in.replace('{active_site}', self.active_site)
-        grid_in = grid_in.replace('{box}', box)
-        grid_in = grid_in.replace('{vdw}', self.config['Parameters']['vdw'])
-        grid_in = grid_in.replace('{grid}', grid)
+        grid_in = grid_in.format(
+            active_site=self.active_site,
+            box=box,
+            vdw=self.config['Parameters']['vdw'],
+            grid=grid
+        )
         grid_in_path = os.path.join(self.output, 'grid.in')
         with open(grid_in_path, 'w') as grid_in_file:
             grid_in_file.write(grid_in)
@@ -61,6 +68,7 @@ class Grid(PipelineElement):
             '-i', grid_in_path
         ]
         PipelineElement._commandline(args)
+        PipelineElement._files_exist([grid + '.bmp', grid + '.nrg'])
         return grid
 
 

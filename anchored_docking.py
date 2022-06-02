@@ -4,12 +4,8 @@ import configparser
 import os
 import logging
 
-from pipeline import BASE_DIR
-from prepare import Preparation
-from prepare_receptor import ReceptorPreparation
-from anchor import AnchorGenerator
-from docking_run import DockingRun
-from rmsd_analysis import RmsdAnalysis
+from pipeline_elements import BASE_DIR, Preparation, ReceptorPreparation, AnchorGenerator, \
+    DockingRun, RmsdAnalysis
 
 
 class AnchoredDocking:

@@ -1,7 +1,7 @@
 """Basic RMSD analysis of a file of docked poses"""
 import re
 
-from pipeline import PipelineElement
+from pipeline_elements import PipelineElement
 
 
 class RmsdAnalysis(PipelineElement):

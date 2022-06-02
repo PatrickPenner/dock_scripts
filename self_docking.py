@@ -4,10 +4,7 @@ import configparser
 import logging
 import os
 
-from pipeline import BASE_DIR
-from prepare_receptor import ReceptorPreparation
-from docking_run import DockingRun
-from rmsd_analysis import RmsdAnalysis
+from pipeline_elements import BASE_DIR, ReceptorPreparation, DockingRun, RmsdAnalysis
 
 
 class SelfDocking:

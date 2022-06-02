@@ -4,11 +4,8 @@ import configparser
 import logging
 import os
 
-from pipeline import PipelineElement, BASE_DIR
-from protoss import ProtossRun
-from prepare import Preparation
-from spheres import SphereGeneration
-from grid import GridGeneration
+from pipeline_elements import PipelineElement, BASE_DIR, ProtossRun, Preparation, \
+    SphereGeneration, GridGeneration
 
 
 class ReceptorPreparation(PipelineElement):

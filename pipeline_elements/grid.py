@@ -4,7 +4,7 @@ import configparser
 import logging
 import os
 
-from pipeline import PipelineElement, BASE_DIR
+from pipeline_elements import PipelineElement, BASE_DIR
 
 
 class GridGeneration(PipelineElement):
@@ -61,12 +61,19 @@ class GridGeneration(PipelineElement):
         grid_template_path = os.path.join(BASE_DIR, 'templates', 'grid.in.template')
         with open(grid_template_path) as grid_template:
             grid_in = grid_template.read()
+
+        # TODO go back over all paths and check they are not longer than 80 chars
+        active_site_path = os.path.relpath(self.active_site, self.output)
+        if len(active_site_path) > 80:
+            active_site_path = self.active_site
+
         grid_in = grid_in.format(
-            active_site=os.path.relpath(self.active_site, self.output),
+            active_site= active_site_path,
             box=os.path.relpath(box, self.output),
             vdw=self.config['Parameters']['vdw'],
             grid=os.path.relpath(self.grid_prefix, self.output)
         )
+        logging.debug(grid_in)
         grid_in_path = os.path.join(self.output, 'grid.in')
         with open(grid_in_path, 'w') as grid_in_file:
             grid_in_file.write(grid_in)

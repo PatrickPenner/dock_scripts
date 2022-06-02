@@ -2,7 +2,7 @@
 import os
 import re
 
-from pipeline import PipelineElement, BASE_DIR
+from pipeline_elements import PipelineElement, BASE_DIR
 
 
 class AnchorGenerator(PipelineElement):

@@ -4,7 +4,7 @@ import configparser
 import logging
 import os
 
-from pipeline import PipelineElement, BASE_DIR
+from pipeline_elements import PipelineElement, BASE_DIR
 
 
 class ProtossRun(PipelineElement):

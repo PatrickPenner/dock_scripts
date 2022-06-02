@@ -3,7 +3,9 @@ import argparse
 import configparser
 import logging
 import os
+import subprocess
 
+from pipeline import BASE_DIR
 from prepare import Preparation
 from prepare_receptor import ReceptorPreparation
 from docking_run import DockingRun
@@ -21,10 +23,10 @@ class CrossDocking:
         :param output: output directory for final and intermediate files
         :param config: config object
         """
-        self.protein = protein
-        self.native_ligand = native_ligand
-        self.docking_ligand = docking_ligand
-        self.output = output
+        self.protein = os.path.abspath(protein)
+        self.native_ligand = os.path.abspath(native_ligand)
+        self.docking_ligand = os.path.abspath(docking_ligand)
+        self.output = os.path.abspath(output)
         self.config = config
         self.__receptor_preparation = None
         self.__ligand_preparation = None
@@ -85,14 +87,17 @@ def main(args):
     logging.basicConfig(level=logging.DEBUG)
     config = configparser.ConfigParser()
     config.read(args.config)
-    cross_docking = CrossDocking(
-        args.protein,
-        args.native_ligand,
-        args.docking_ligand,
-        args.output,
-        config
-    )
-    cross_docking.run(args.recalc)
+    try:
+        cross_docking = CrossDocking(
+            args.protein,
+            args.native_ligand,
+            args.docking_ligand,
+            args.output,
+            config
+        )
+        cross_docking.run(args.recalc)
+    except subprocess.CalledProcessError as error:
+        logging.error(error.output.decode('utf8'))
 
 
 if __name__ == '__main__':
@@ -106,5 +111,10 @@ if __name__ == '__main__':
         action='store_true',
         help='recalculate all intermediate results'
     )
-    parser.add_argument('--config', type=str, help='path to a config file', default='config.ini')
+    parser.add_argument(
+        '--config',
+        type=str,
+        help='path to a config file',
+        default=os.path.join(BASE_DIR, 'config.ini')
+    )
     main(parser.parse_args())

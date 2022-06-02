@@ -4,6 +4,7 @@ import configparser
 import logging
 import os
 
+from pipeline import BASE_DIR
 from prepare_receptor import ReceptorPreparation
 from docking_run import DockingRun
 
@@ -19,9 +20,9 @@ class SelfDocking:
         :param output: output directory for final and intermediate files
         :param config: config object
         """
-        self.protein = protein
-        self.ligand = ligand
-        self.output = output
+        self.protein = os.path.abspath(protein)
+        self.ligand = os.path.abspath(ligand)
+        self.output = os.path.abspath(output)
         self.config = config
         self.__receptor_preparation = None
         self.__docking_run = None
@@ -85,5 +86,11 @@ if __name__ == '__main__':
         action='store_true',
         help='recalculate all intermediate results'
     )
-    parser.add_argument('--config', type=str, help='path to a config file', default='config.ini')
+    base_config = os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.ini'))
+    parser.add_argument(
+        '--config',
+        type=str,
+        help='path to a config file',
+        default=os.path.join(BASE_DIR, 'config.ini')
+    )
     main(parser.parse_args())

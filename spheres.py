@@ -4,7 +4,7 @@ import configparser
 import logging
 import os
 
-from pipeline import PipelineElement
+from pipeline import PipelineElement, BASE_DIR
 
 
 class SphereGeneration(PipelineElement):
@@ -18,9 +18,9 @@ class SphereGeneration(PipelineElement):
         :param output: output directory to write files to
         :param config: config object
         """
-        self.active_site = active_site
-        self.ligand = ligand
-        self.output = output
+        self.active_site = os.path.abspath(active_site)
+        self.ligand = os.path.abspath(ligand)
+        self.output = os.path.abspath(output)
         self.config = config
         self.selected_spheres = os.path.join(self.output, 'selected_spheres.sph')
         self.selected_spheres_pdb = os.path.join(self.output, 'selected_spheres.pdb')
@@ -56,12 +56,13 @@ class SphereGeneration(PipelineElement):
 
     def __generate_spheres(self, surface):
         sphere_clusters = os.path.join(self.output, 'rec.sph')
-        with open('templates/INSPH.template') as insph_template:
+        insph_template_path = os.path.join(BASE_DIR, 'templates', 'INSPH.template')
+        with open(insph_template_path) as insph_template:
             insph = insph_template.read()
         # we will be running sphgen in the spheres directory with relative paths
         insph = insph.format(
-            surface=os.path.basename(surface),
-            spheres=os.path.basename(sphere_clusters)
+            surface=os.path.relpath(surface, self.output),
+            spheres=os.path.relpath(sphere_clusters, self.output)
         )
         with open(os.path.join(self.output, 'INSPH'), 'w') as insph_file:
             insph_file.write(insph)
@@ -80,7 +81,7 @@ class SphereGeneration(PipelineElement):
     def __select_spheres(self, sphere_clusters):
         args = [
             self.config['Binaries']['sphere_selector'],
-            sphere_clusters,
+            os.path.relpath(sphere_clusters, self.output),
             self.ligand,
             self.config['Parameters']['sphere_radius']
         ]
@@ -88,11 +89,12 @@ class SphereGeneration(PipelineElement):
         PipelineElement._files_must_exist([self.selected_spheres])
 
     def __show_spheres(self):
-        with open('templates/show_spheres.in.template') as show_spheres_template:
+        show_spheres_template_path = os.path.join(BASE_DIR, 'templates', 'show_spheres.in.template')
+        with open(show_spheres_template_path) as show_spheres_template:
             show_spheres = show_spheres_template.read()
         show_spheres = show_spheres.format(
-            selected_spheres=os.path.basename(self.selected_spheres),
-            selected_spheres_pdb=os.path.basename(self.selected_spheres_pdb)
+            selected_spheres=os.path.relpath(self.selected_spheres, self.output),
+            selected_spheres_pdb=os.path.relpath(self.selected_spheres_pdb, self.output)
         )
         logging.debug(show_spheres)
         PipelineElement._commandline(
@@ -119,5 +121,10 @@ if __name__ == '__main__':
     parser.add_argument('active_site', type=str, help='path to the active site')
     parser.add_argument('ligand', type=str, help='path to the ligand')
     parser.add_argument('output', type=str, help='output directory to write spheres')
-    parser.add_argument('--config', type=str, help='path to a config file', default='config.ini')
+    parser.add_argument(
+        '--config',
+        type=str,
+        help='path to a config file',
+        default=os.path.join(BASE_DIR, 'config.ini')
+    )
     main(parser.parse_args())

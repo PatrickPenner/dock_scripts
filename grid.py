@@ -4,7 +4,7 @@ import configparser
 import logging
 import os
 
-from pipeline import PipelineElement
+from pipeline import PipelineElement, BASE_DIR
 
 
 class GridGeneration(PipelineElement):
@@ -18,9 +18,9 @@ class GridGeneration(PipelineElement):
         :param output: output directory to write to
         :param config: config object
         """
-        self.active_site = active_site
-        self.spheres = spheres
-        self.output = output
+        self.active_site = os.path.abspath(active_site)
+        self.spheres = os.path.abspath(spheres)
+        self.output = os.path.abspath(output)
         self.config = config
         self.grid_prefix = os.path.join(self.output, 'grid')
         self.energy_grid = self.grid_prefix + '.nrg'
@@ -41,28 +41,31 @@ class GridGeneration(PipelineElement):
 
     def __create_box(self):
         box = os.path.join(self.output, 'box.pdb')
-        with open('templates/box.in.template') as box_template:
+        box_template_path = os.path.join(BASE_DIR, 'templates', 'box.in.template')
+        with open(box_template_path) as box_template:
             box_in = box_template.read()
         box_in = box_in.format(
-            spheres=self.spheres,
-            box=box
+            spheres=os.path.relpath(self.spheres, self.output),
+            box=os.path.relpath(box, self.output)
         )
         logging.debug(box_in)
         PipelineElement._commandline(
             [self.config['Binaries']['showbox']],
-            input=bytes(box_in, 'utf8')
+            input=bytes(box_in, 'utf8'),
+            cwd=self.output
         )
         PipelineElement._files_must_exist([box])
         return box
 
     def __create_grid(self, box):
-        with open('templates/grid.in.template') as grid_template:
+        grid_template_path = os.path.join(BASE_DIR, 'templates', 'grid.in.template')
+        with open(grid_template_path) as grid_template:
             grid_in = grid_template.read()
         grid_in = grid_in.format(
-            active_site=self.active_site,
+            active_site=os.path.relpath(self.active_site, self.output),
             box=box,
             vdw=self.config['Parameters']['vdw'],
-            grid=self.grid_prefix
+            grid=os.path.relpath(self.grid_prefix, self.output)
         )
         grid_in_path = os.path.join(self.output, 'grid.in')
         with open(grid_in_path, 'w') as grid_in_file:
@@ -71,7 +74,7 @@ class GridGeneration(PipelineElement):
             self.config['Binaries']['grid'],
             '-i', grid_in_path
         ]
-        PipelineElement._commandline(args)
+        PipelineElement._commandline(args, cwd=self.output)
         PipelineElement._files_must_exist([self.energy_grid, self.bump_grid])
 
 
@@ -90,5 +93,11 @@ if __name__ == '__main__':
     parser.add_argument('active_site', type=str, help='path to the active site')
     parser.add_argument('spheres', type=str, help='path to the spheres')
     parser.add_argument('output', type=str, help='output directory to write spheres')
-    parser.add_argument('--config', type=str, help='path to a config file', default='config.ini')
+    base_config = os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.ini'))
+    parser.add_argument(
+        '--config',
+        type=str,
+        help='path to a config file',
+        default=os.path.join(BASE_DIR, 'config.ini')
+    )
     main(parser.parse_args())

@@ -4,7 +4,7 @@ import configparser
 import logging
 import os
 
-from pipeline import PipelineElement
+from pipeline import PipelineElement, BASE_DIR
 
 
 class Preparation(PipelineElement):
@@ -25,14 +25,14 @@ class Preparation(PipelineElement):
         """
         if not protein and not ligand:
             raise RuntimeError('Either protein or ligand or both are required')
-        self.protein = protein
+        self.protein = os.path.abspath(protein) if protein else None
         self.name = 'prepared'
         if name:
             self.name = name
         elif self.protein:
             self.name, _extension = os.path.splitext(os.path.basename(self.protein))
-        self.ligand = ligand
-        self.output = output
+        self.ligand = os.path.abspath(ligand) if ligand else None
+        self.output = os.path.abspath(output)
         self.config = config
         self.active_site_pdb = os.path.join(self.output, self.name + '_active_site.pdb')
         self.active_site_mol2 = os.path.join(self.output, self.name + '_active_site.mol2')
@@ -107,7 +107,8 @@ class Preparation(PipelineElement):
 
     def __write_active_site(self):
         # I wrote a python script in a python script so I could write python while I write python
-        with open('templates/write_active_site.py.template') as script_template:
+        script_template_path = os.path.join(BASE_DIR, 'templates', 'write_active_site.py.template')
+        with open(script_template_path) as script_template:
             script = script_template.read()
         script = script.format(
             protein=self.protein,
@@ -155,5 +156,11 @@ if __name__ == '__main__':
     parser.add_argument('protein', type=str, help='path to the protein')
     parser.add_argument('ligand', type=str, help='path to the ligand')
     parser.add_argument('output', type=str, help='output directory to write prepared')
-    parser.add_argument('--config', type=str, help='path to a config file', default='config.ini')
+    base_config = os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.ini'))
+    parser.add_argument(
+        '--config',
+        type=str,
+        help='path to a config file',
+        default=os.path.join(BASE_DIR, 'config.ini')
+    )
     main(parser.parse_args())

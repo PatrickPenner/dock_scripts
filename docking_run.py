@@ -4,7 +4,7 @@ import configparser
 import logging
 import os
 
-from pipeline import PipelineElement
+from pipeline import PipelineElement, BASE_DIR
 
 
 class DockingRun(PipelineElement):
@@ -19,10 +19,10 @@ class DockingRun(PipelineElement):
         :param output: output directory to write to
         :param config: config object
         """
-        self.ligand = ligand
-        self.spheres = spheres
+        self.ligand = os.path.abspath(ligand)
+        self.spheres = os.path.abspath(spheres)
         self.grid = grid
-        self.output = output
+        self.output = os.path.abspath(output)
         self.config = config
         self.docked_prefix = docked_prefix = os.path.join(self.output, 'docked')
         self.docked = docked_prefix + '_scored.mol2'
@@ -34,16 +34,17 @@ class DockingRun(PipelineElement):
         if not os.path.exists(self.output):
             os.mkdir(self.output)
 
-        with open('templates/anchor_and_grow.in.template') as dock_template:
+        dock_template_path = os.path.join(BASE_DIR, 'templates', 'anchor_and_grow.in.template')
+        with open(dock_template_path) as dock_template:
             dock_in = dock_template.read()
         dock_in = dock_in.format(
-            ligand=self.ligand,
-            spheres=self.spheres,
-            grid=self.grid,
+            ligand=os.path.relpath(self.ligand, self.output),
+            spheres=os.path.relpath(self.spheres, self.output),
+            grid=os.path.relpath(self.grid, self.output),
             vdw=self.config['Parameters']['vdw'],
             flex=self.config['Parameters']['flex'],
             flex_drive=self.config['Parameters']['flex_drive'],
-            docked_prefix=self.docked_prefix
+            docked_prefix=os.path.relpath(self.docked_prefix, self.output)
         )
         dock_in_path = os.path.join(self.output, 'dock.in')
         with open(dock_in_path, 'w') as dock_in_file:
@@ -52,7 +53,7 @@ class DockingRun(PipelineElement):
             self.config['Binaries']['dock'],
             '-i', dock_in_path
         ]
-        PipelineElement._commandline(args)
+        PipelineElement._commandline(args, cwd=self.output)
         PipelineElement._files_must_exist([self.docked])
         return self
 
@@ -76,5 +77,11 @@ if __name__ == '__main__':
     parser.add_argument('spheres', type=str, help='path to the spheres')
     parser.add_argument('grid', type=str, help='grid prefix')
     parser.add_argument('output', type=str, help='output directory to write docking')
-    parser.add_argument('--config', type=str, help='path to a config file', default='config.ini')
+    base_config = os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.ini'))
+    parser.add_argument(
+        '--config',
+        type=str,
+        help='path to a config file',
+        default=os.path.join(BASE_DIR, 'config.ini')
+    )
     main(parser.parse_args())

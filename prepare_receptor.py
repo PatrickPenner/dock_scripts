@@ -4,7 +4,7 @@ import configparser
 import logging
 import os
 
-from pipeline import PipelineElement
+from pipeline import PipelineElement, BASE_DIR
 from prepare import Preparation
 from spheres import SphereGeneration
 from grid import GridGeneration
@@ -21,9 +21,9 @@ class ReceptorPreparation(PipelineElement):
         :param output: output directory to write to
         :param config: config object
         """
-        self.protein = protein
-        self.native_ligand = native_ligand
-        self.output = output
+        self.protein = os.path.abspath(protein)
+        self.native_ligand = os.path.abspath(native_ligand)
+        self.output = os.path.abspath(output)
         self.config = config
         self.__preparation = None
         self.__sphere_generation = None
@@ -122,5 +122,11 @@ if __name__ == '__main__':
         action='store_true',
         help='recalculate all intermediate results'
     )
-    parser.add_argument('--config', type=str, help='path to a config file', default='config.ini')
+    base_config = os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.ini'))
+    parser.add_argument(
+        '--config',
+        type=str,
+        help='path to a config file',
+        default=os.path.join(BASE_DIR, 'config.ini')
+    )
     main(parser.parse_args())

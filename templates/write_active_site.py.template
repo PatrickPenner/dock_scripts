@@ -2,5 +2,6 @@ from chimera import runCommand as rc
 
 rc('open {protein} {ligand}')
 rc('select #1 zr<{radius}')
+rc('~select ::HOH')
 rc('write format pdb selected #0 {active_site_pdb}')
 rc('write format mol2 selected #0 {active_site_mol2}')

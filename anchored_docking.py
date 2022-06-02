@@ -24,7 +24,8 @@ class AnchoredDocking:
             output,
             config,
             docking_in=None,
-            rmsd_reference=None
+            rmsd_reference=None,
+            receptor=None
     ):
         """Anchored docking using the DOCK workflow
 
@@ -36,6 +37,7 @@ class AnchoredDocking:
         :param config: config object
         :param docking_in: DOCK input template file
         :param rmsd_reference: reference molecule for RMSD calculation
+        :param receptor: path to the receptor
         """
         self.protein = os.path.abspath(protein)
         self.native_ligand = os.path.abspath(native_ligand)
@@ -49,6 +51,7 @@ class AnchoredDocking:
         elif rmsd_reference:
             self.docking_in = os.path.join(BASE_DIR, 'templates', 'FAD_rmsd_reference.in.template')
         self.rmsd_reference = os.path.abspath(rmsd_reference) if rmsd_reference else None
+        self.receptor = os.path.abspath(receptor) if receptor else None
         self.__receptor_preparation = None
         self.__ligand_preparation = None
         self.__anchor_generator = None
@@ -58,6 +61,8 @@ class AnchoredDocking:
 
     def __build_workflow(self):
         receptor_preparation_dir = os.path.join(self.output, 'receptor')
+        if self.receptor:
+            receptor_preparation_dir = self.receptor
         self.__receptor_preparation = ReceptorPreparation(
             self.protein,
             self.native_ligand,
@@ -140,7 +145,8 @@ def main(args):
         args.output,
         config,
         docking_in=args.docking_in,
-        rmsd_reference=args.rmsd_reference
+        rmsd_reference=args.rmsd_reference,
+        receptor=args.receptor
     )
     cross_docking.run(args.recalc)
 
@@ -168,5 +174,10 @@ if __name__ == '__main__':
         '--rmsd_reference',
         type=str,
         help='reference molecule for RMSD calculation'
+    )
+    parser.add_argument(
+        '--receptor',
+        type=str,
+        help='path to the receptor, if it doesn\'t exist, it will be generated at this path'
     )
     main(parser.parse_args())

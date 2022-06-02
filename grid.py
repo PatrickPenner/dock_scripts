@@ -72,7 +72,7 @@ class GridGeneration(PipelineElement):
             grid_in_file.write(grid_in)
         args = [
             self.config['Binaries']['grid'],
-            '-i', grid_in_path
+            '-i', os.path.relpath(grid_in_path, self.output)
         ]
         PipelineElement._commandline(args, cwd=self.output)
         PipelineElement._files_must_exist([self.energy_grid, self.bump_grid])

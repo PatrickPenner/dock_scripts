@@ -1,3 +1,4 @@
+"""Perform protonation using protoss"""
 import argparse
 import configparser
 import logging
@@ -7,8 +8,16 @@ from pipeline import PipelineElement, BASE_DIR
 
 
 class ProtossRun(PipelineElement):
+    """Perform protonation using protoss"""
 
     def __init__(self, protein, output, config, ligand=None):
+        """Perform protonation using protoss
+
+        :param protein: path to the protein as PDB
+        :param output: output directory for final and intermediate files
+        :param config: config object
+        :param ligand: path to the ligand as SDF
+        """
         if not protein:
             raise RuntimeError('Protein is required')
         self.protein = protein
@@ -20,6 +29,7 @@ class ProtossRun(PipelineElement):
         self.protonated_ligand = os.path.join(self.output, self.name + '_h_ligand.sdf')
 
     def run(self, _recalc=False):
+        """Run protoss protonation"""
         files = [self.protein]
         if self.ligand:
             files.append(self.ligand)

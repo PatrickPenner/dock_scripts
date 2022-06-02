@@ -13,7 +13,16 @@ from docking_run import DockingRun
 class CrossDocking:
     """Cross-docking using the DOCK workflow"""
 
-    def __init__(self, protein, native_ligand, docking_ligand, output, config, docking_in=None):
+    def __init__(
+            self,
+            protein,
+            native_ligand,
+            docking_ligand,
+            output,
+            config,
+            docking_in=None,
+            rmsd_reference=None
+    ):
         """Cross-docking using the DOCK workflow
 
         :param protein: protein pdb to dock into
@@ -22,6 +31,7 @@ class CrossDocking:
         :param output: output directory for final and intermediate files
         :param config: config object
         :param docking_in: DOCK input template file
+        :param rmsd_reference: reference molecule for RMSD calculation
         """
         self.protein = os.path.abspath(protein)
         self.native_ligand = os.path.abspath(native_ligand)
@@ -29,6 +39,7 @@ class CrossDocking:
         self.output = os.path.abspath(output)
         self.config = config
         self.docking_in = docking_in
+        self.rmsd_reference = os.path.abspath(rmsd_reference)
         self.__receptor_preparation = None
         self.__ligand_preparation = None
         self.__docking_run = None
@@ -55,7 +66,8 @@ class CrossDocking:
             self.__receptor_preparation.grid_prefix,
             docking_dir,
             self.config,
-            docking_in=self.docking_in
+            docking_in=self.docking_in,
+            rmsd_reference=self.rmsd_reference
         )
 
     @property
@@ -95,7 +107,8 @@ def main(args):
         args.docking_ligand,
         args.output,
         config,
-        docking_in=args.docking_in
+        docking_in=args.docking_in,
+        rmsd_reference=args.rmsd_reference
     )
     cross_docking.run(args.recalc)
     print(cross_docking.docked)
@@ -119,4 +132,9 @@ if __name__ == '__main__':
         default=os.path.join(BASE_DIR, 'config.ini')
     )
     parser.add_argument('--docking_in', type=str, help='custom docking input file for DOCK')
+    parser.add_argument(
+        '--rmsd_reference',
+        type=str,
+        help='reference molecule for RMSD calculation'
+    )
     main(parser.parse_args())

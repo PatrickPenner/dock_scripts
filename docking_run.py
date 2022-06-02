@@ -10,7 +10,16 @@ from pipeline import PipelineElement, BASE_DIR
 class DockingRun(PipelineElement):
     """Docking run using DOCK"""
 
-    def __init__(self, ligand, spheres, grid, output, config, docking_in=None):
+    def __init__(
+            self,
+            ligand,
+            spheres,
+            grid,
+            output,
+            config,
+            docking_in=None,
+            rmsd_reference=None
+    ):
         """Docking run using DOCK
 
         The docking input file used is either user specified with docking_in or
@@ -22,6 +31,7 @@ class DockingRun(PipelineElement):
         :param output: output directory to write to
         :param config: config object
         :param docking_in: DOCK input template file
+        :param rmsd_reference: reference molecule for RMSD calculation
         """
         self.ligand = os.path.abspath(ligand)
         self.spheres = os.path.abspath(spheres)
@@ -32,6 +42,9 @@ class DockingRun(PipelineElement):
         if docking_in:
             PipelineElement._files_must_exist([docking_in])
             self.docking_in = docking_in
+        elif rmsd_reference:
+            self.docking_in = os.path.join(BASE_DIR, 'templates', 'FLX_rmsd_reference.in.template')
+        self.rmsd_reference = os.path.abspath(rmsd_reference)
         self.docked_prefix = docked_prefix = os.path.join(self.output, 'docked')
         self.docked = docked_prefix + '_scored.mol2'
 
@@ -44,15 +57,25 @@ class DockingRun(PipelineElement):
 
         with open(self.docking_in) as dock_template:
             dock_in = dock_template.read()
-        dock_in = dock_in.format(
-            ligand=os.path.relpath(self.ligand, self.output),
-            spheres=os.path.relpath(self.spheres, self.output),
-            grid=os.path.relpath(self.grid, self.output),
-            vdw=self.config['Parameters']['vdw'],
-            flex=self.config['Parameters']['flex'],
-            flex_drive=self.config['Parameters']['flex_drive'],
-            docked_prefix=os.path.relpath(self.docked_prefix, self.output)
-        )
+
+        parameter_map = {
+            'ligand': os.path.relpath(self.ligand, self.output),
+            'spheres': os.path.relpath(self.spheres, self.output),
+            'grid': os.path.relpath(self.grid, self.output),
+            'vdw': self.config['Parameters']['vdw'],
+            'flex': self.config['Parameters']['flex'],
+            'flex_drive': self.config['Parameters']['flex_drive'],
+            'docked_prefix': os.path.relpath(self.docked_prefix, self.output)
+        }
+        if self.rmsd_reference and '{reference}' in dock_in:
+            parameter_map['reference'] = os.path.relpath(self.rmsd_reference, self.output)
+        elif self.rmsd_reference:
+            raise RuntimeError(
+                'RMSD reference was specified for a docking input file that '
+                'does not support RMSD calculation'
+            )
+        dock_in = dock_in.format(**parameter_map)
+
         dock_in_path = os.path.join(self.output, 'dock.in')
         with open(dock_in_path, 'w') as dock_in_file:
             dock_in_file.write(dock_in)
@@ -79,7 +102,8 @@ def main(args):
         args.grid,
         args.output,
         config,
-        docking_in=args.docking_in
+        docking_in=args.docking_in,
+        rmsd_reference=args.rmsd_reference
     )
     dock.run()
     print(dock.docked)
@@ -99,4 +123,9 @@ if __name__ == '__main__':
         default=os.path.join(BASE_DIR, 'config.ini')
     )
     parser.add_argument('--docking_in', type=str, help='custom docking input file for DOCK')
+    parser.add_argument(
+        '--rmsd_reference',
+        type=str,
+        help='reference molecule for RMSD calculation'
+    )
     main(parser.parse_args())

@@ -52,7 +52,6 @@ class Preparation(PipelineElement):
         return self
 
     def output_exists(self):
-        """Get the output of the protein-ligand preparation"""
         files = [self.converted_ligand]
         if self.protein:
             files.extend([self.active_site_pdb, self.active_site_mol2])

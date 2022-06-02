@@ -57,6 +57,7 @@ class DockingRun(PipelineElement):
         PipelineElement._commandline(args)
         self.docked = docked_prefix + '_scored.mol2'
         PipelineElement._files_exist([self.docked])
+        return self
 
 
 def main(args):

@@ -33,6 +33,7 @@ class GridGeneration(PipelineElement):
 
         box = self.__create_box()
         self.grid_prefix = self.__create_grid(box)
+        return self
 
     def __create_box(self):
         box = os.path.join(self.output, 'box.pdb')

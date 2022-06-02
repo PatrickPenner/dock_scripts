@@ -35,6 +35,7 @@ class SphereGeneration(PipelineElement):
         sphere_clusters = self.__generate_spheres(surface)
         self.selected_spheres = self.__select_spheres(sphere_clusters)
         self.selected_spheres_pdb = self.__show_spheres()
+        return self
 
     def __generate_surface(self):
         surface = os.path.join(self.output, 'rec.ms')

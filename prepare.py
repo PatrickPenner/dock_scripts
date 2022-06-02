@@ -3,10 +3,12 @@ import argparse
 import configparser
 import logging
 import os
-import subprocess
+
+from pipeline import PipelineElement
 
 
-class Preparation:  # intentionally sparse interface pylint: disable=too-few-public-methods
+# intentionally sparse interface and multiple paths pylint: disable=too-few-public-methods too-many-instance-attributes
+class Preparation(PipelineElement):
     """Protein-ligand preparation for a DOCK workflow"""
 
     def __init__(self, protein, ligand, output, config):
@@ -26,22 +28,19 @@ class Preparation:  # intentionally sparse interface pylint: disable=too-few-pub
         self.ligand = ligand
         self.output = output
         self.config = config
-        self.active_site = None
+        self.active_site_pdb = None
+        self.active_site_mol2 = None
         self.converted_ligand = None
 
     def run(self):
-        """Run protein-ligand preparation
-
-        :return: active_site_path, converted_ligand_path
-        """
+        """Run protein-ligand preparation"""
         if not os.path.exists(self.output):
             os.mkdir(self.output)
 
         protonated_protein, protonated_ligand = self.__run_protoss()
         clean_protein = self.__clean_binding_site(protonated_protein)
-        self.active_site = self.__write_active_site(clean_protein)
+        self.active_site_pdb, self.active_site_mol2 = self.__write_active_site(clean_protein)
         self.converted_ligand = self.__convert_ligand(protonated_ligand)
-        return self.active_site, self.converted_ligand
 
     def __run_protoss(self):
         protonated_protein = os.path.join(self.output, self.pdb + '_h.pdb')
@@ -53,10 +52,7 @@ class Preparation:  # intentionally sparse interface pylint: disable=too-few-pub
             '-o', protonated_protein,
             '--ligand_output', protonated_ligand
         ]
-        logging.debug('running: %s', ' '.join(args))
-        output = subprocess.check_output(args, stderr=subprocess.STDOUT)
-        if output:
-            logging.debug(output.decode('utf8'))
+        PipelineElement._commandline(args)
         return protonated_protein, protonated_ligand
 
     def __clean_binding_site(self, protonated_protein):
@@ -67,20 +63,20 @@ class Preparation:  # intentionally sparse interface pylint: disable=too-few-pub
             '-l', self.ligand,
             '-c', clean_protein
         ]
-        logging.debug('running: %s', ' '.join(args))
-        output = subprocess.check_output(args, stderr=subprocess.STDOUT)
-        if output:
-            logging.debug(output.decode('utf8'))
+        PipelineElement._commandline(args)
         return clean_protein
 
     def __write_active_site(self, clean_protein):
         # I wrote a python script in a python script so I could write python while I write python
-        active_site = os.path.join(self.output, self.pdb + '_active_site.mol2')
-        with open('write_active_site.template.py') as script_template:
+        active_site_pdb = os.path.join(self.output, self.pdb + '_active_site.pdb')
+        active_site_mol2 = os.path.join(self.output, self.pdb + '_active_site.mol2')
+        with open('write_active_site.py.template') as script_template:
             script = script_template.read()
         script = script.replace('{protein}', clean_protein)
         script = script.replace('{ligand}', self.ligand)
-        script = script.replace('{active_site}', active_site)
+        script = script.replace('{radius}', self.config['Parameters']['active_site_radius'])
+        script = script.replace('{active_site_pdb}', active_site_pdb)
+        script = script.replace('{active_site_mol2}', active_site_mol2)
         script_path = os.path.join(self.output, 'write_active_site.py')
         logging.debug(script)
         with open(script_path, 'w') as script_file:
@@ -90,11 +86,8 @@ class Preparation:  # intentionally sparse interface pylint: disable=too-few-pub
             '--nogui',
             script_path
         ]
-        logging.debug('running: %s', ' '.join(args))
-        output = subprocess.check_output(args, stderr=subprocess.STDOUT)
-        if output:
-            logging.debug(output.decode('utf8'))
-        return active_site
+        PipelineElement._commandline(args)
+        return active_site_pdb, active_site_mol2
 
     def __convert_ligand(self, protonated_ligand):
         converted_ligand = os.path.join(self.output, self.pdb + '_ligand_h.mol2')
@@ -103,10 +96,7 @@ class Preparation:  # intentionally sparse interface pylint: disable=too-few-pub
             '-i', protonated_ligand,
             '-o', converted_ligand
         ]
-        logging.debug('running: %s', ' '.join(args))
-        output = subprocess.check_output(args, stderr=subprocess.STDOUT)
-        if output:
-            logging.debug(output.decode('utf8'))
+        PipelineElement._commandline(args)
         return converted_ligand
 
 
@@ -117,8 +107,9 @@ def main(args):
     config.read(args.config)
     preparation = Preparation(args.protein, args.ligand, args.output, config)
     preparation.run()
-    print(preparation.active_site)
     print(preparation.converted_ligand)
+    print(preparation.active_site_mol2)
+    print(preparation.active_site_pdb)
 
 
 if __name__ == '__main__':

@@ -68,7 +68,7 @@ class GridGeneration(PipelineElement):
             active_site_path = self.active_site
 
         grid_in = grid_in.format(
-            active_site= active_site_path,
+            active_site=active_site_path,
             box=os.path.relpath(box, self.output),
             vdw=self.config['Parameters']['vdw'],
             grid=os.path.relpath(self.grid_prefix, self.output)
@@ -83,28 +83,3 @@ class GridGeneration(PipelineElement):
         ]
         PipelineElement._commandline(args, cwd=self.output)
         PipelineElement._files_must_exist([self.energy_grid, self.bump_grid])
-
-
-def main(args):
-    """Module main to demonstrate functionality"""
-    logging.basicConfig(level=logging.DEBUG)
-    config = configparser.ConfigParser()
-    config.read(args.config)
-    grid = GridGeneration(args.active_site, args.spheres, args.output, config)
-    grid.run()
-    print(grid.grid_prefix)
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('active_site', type=str, help='path to the active site')
-    parser.add_argument('spheres', type=str, help='path to the spheres')
-    parser.add_argument('output', type=str, help='output directory to write spheres')
-    base_config = os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.ini'))
-    parser.add_argument(
-        '--config',
-        type=str,
-        help='path to a config file',
-        default=os.path.join(BASE_DIR, 'config.ini')
-    )
-    main(parser.parse_args())

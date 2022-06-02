@@ -16,9 +16,9 @@ class AnchoredDeNovoTest(TestCase):
 
     def test_run(self):
         """Test anchored de novo run"""
-        anchor = os.path.join(BASE_DIR, 'tests', 'test_files', '1bty_core.mol2')
+        anchor = os.path.join(BASE_DIR, 'tests', 'test_files', '3ryx_core.mol2')
         fragment_prefix = os.path.join(BASE_DIR, 'tests', 'test_files', 'fraglib', 'fraglib')
-        grid_prefix = os.path.join(BASE_DIR, 'tests', 'test_files', '1bty_grid', 'grid')
+        grid_prefix = os.path.join(BASE_DIR, 'tests', 'test_files', '3ryx_grid', 'grid')
         anchored_de_novo = AnchoredDeNovo(
             anchor,
             fragment_prefix,

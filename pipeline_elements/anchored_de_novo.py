@@ -9,6 +9,7 @@ from pipeline_elements import BASE_DIR, PipelineElement
 
 class AnchoredDeNovo(PipelineElement):
     """Anchored DOCK de novo run"""
+
     def __init__(self, anchor, fragment_prefix, grid_prefix, output, config, docking_in=None):
         """Anchored DOCK de novo run
 
@@ -77,35 +78,3 @@ class AnchoredDeNovo(PipelineElement):
 
     def output_exists(self):
         return PipelineElement._files_exist([self.built_molecules])
-
-
-def main(args):
-    """Module main to demonstrate functionality"""
-    logging.basicConfig(level=logging.DEBUG)
-    config = configparser.ConfigParser()
-    config.read(args.config)
-    anchored_de_novo = AnchoredDeNovo(
-        args.anchor,
-        args.fragments,
-        args.grid,
-        args.output,
-        config
-    ).run()
-    print(anchored_de_novo.built_molecules)
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('anchor', type=str, help='path to the anchor')
-    parser.add_argument('fragments', type=str, help='fragment prefix')
-    parser.add_argument('grid', type=str, help='grid prefix')
-    parser.add_argument('output', type=str, help='output directory to write anchored de novo')
-    base_config = os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.ini'))
-    parser.add_argument(
-        '--config',
-        type=str,
-        help='path to a config file',
-        default=os.path.join(BASE_DIR, 'config.ini')
-    )
-    parser.add_argument('--docking_in', type=str, help='custom docking input file for DOCK')
-    main(parser.parse_args())

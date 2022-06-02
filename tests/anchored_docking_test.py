@@ -34,5 +34,24 @@ class AnchoredDockingTest(TestCase):
         ).run()
         self.assertTrue(os.path.exists(cross_docking.docked))
 
+    def test_run_with_rmsd_reference(self):
+        """Test anchored docking run with rmsd reference"""
+        protein = os.path.abspath(os.path.join(BASE_DIR, 'tests', 'test_files', '1cps.pdb'))
+        native_ligand = os.path.abspath(
+            os.path.join(BASE_DIR, 'tests', 'test_files', '1cps_ligand.sdf'))
+        docking_ligand = os.path.abspath(
+            os.path.join(BASE_DIR, 'tests', 'test_files', '1cbx_ligand.sdf'))
+        template = os.path.abspath(os.path.join(BASE_DIR, 'tests', 'test_files', '1cbx_core.mol2'))
+        cross_docking = AnchoredDocking(
+            protein,
+            native_ligand,
+            docking_ligand,
+            template,
+            self.tmp_dir.name,
+            self.config,
+            rmsd_reference=docking_ligand
+        ).run()
+        self.assertTrue(os.path.exists(cross_docking.docked))
+
     def tearDown(self):
         self.tmp_dir.cleanup()

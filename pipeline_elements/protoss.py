@@ -70,29 +70,3 @@ class ProtossRun(PipelineElement):
 
     def output_exists(self):
         return PipelineElement._files_exist([self.protonated_protein, self.protonated_ligand])
-
-
-def main(args):
-    """Module main to demonstrate functionality"""
-    logging.basicConfig(level=logging.DEBUG)
-    config = configparser.ConfigParser()
-    config.read(args.config)
-    protoss_run = ProtossRun(args.protein, args.output, config, ligand=args.ligand)
-    protoss_run.run()
-    print(protoss_run.protonated_protein)
-    print(protoss_run.protonated_ligand)
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('protein', type=str, help='path to the protein')
-    parser.add_argument('ligand', type=str, help='path to the ligand')
-    parser.add_argument('output', type=str, help='output directory to write prepared')
-    base_config = os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.ini'))
-    parser.add_argument(
-        '--config',
-        type=str,
-        help='path to a config file',
-        default=os.path.join(BASE_DIR, 'config.ini')
-    )
-    main(parser.parse_args())

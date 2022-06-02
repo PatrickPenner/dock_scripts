@@ -10,3 +10,5 @@ from .protoss_test import ProtossRunTest
 from .rmsd_analysis_test import RmsdAnalysisTest
 from .self_docking_test import SelfDockingTest
 from .spheres_test import SphereGenerationTest
+from .anchored_de_novo_test import AnchoredDeNovoTest
+from .anchored_growing_test import AnchoredGrowingTest

@@ -103,28 +103,3 @@ class SphereGeneration(PipelineElement):
             cwd=self.output
         )
         PipelineElement._files_must_exist([self.selected_spheres_pdb])
-
-
-def main(args):
-    """Module main to demonstrate functionality"""
-    logging.basicConfig(level=logging.DEBUG)
-    config = configparser.ConfigParser()
-    config.read(args.config)
-    spheres = SphereGeneration(args.active_site, args.ligand, args.output, config)
-    spheres.run()
-    print(spheres.selected_spheres)
-    print(spheres.selected_spheres_pdb)
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('active_site', type=str, help='path to the active site')
-    parser.add_argument('ligand', type=str, help='path to the ligand')
-    parser.add_argument('output', type=str, help='output directory to write spheres')
-    parser.add_argument(
-        '--config',
-        type=str,
-        help='path to a config file',
-        default=os.path.join(BASE_DIR, 'config.ini')
-    )
-    main(parser.parse_args())

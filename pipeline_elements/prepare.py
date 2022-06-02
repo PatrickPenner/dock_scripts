@@ -104,30 +104,3 @@ class Preparation(PipelineElement):
         ]
         PipelineElement._commandline(args)
         PipelineElement._files_must_exist([self.converted_ligand])
-
-
-def main(args):
-    """Module main to demonstrate functionality"""
-    logging.basicConfig(level=logging.DEBUG)
-    config = configparser.ConfigParser()
-    config.read(args.config)
-    preparation = Preparation(args.ligand, args.output, config, protein=args.protein)
-    preparation.run()
-    print(preparation.converted_ligand)
-    print(preparation.active_site_mol2)
-    print(preparation.active_site_pdb)
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('protein', type=str, help='path to the protein')
-    parser.add_argument('ligand', type=str, help='path to the ligand')
-    parser.add_argument('output', type=str, help='output directory to write prepared')
-    base_config = os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.ini'))
-    parser.add_argument(
-        '--config',
-        type=str,
-        help='path to a config file',
-        default=os.path.join(BASE_DIR, 'config.ini')
-    )
-    main(parser.parse_args())

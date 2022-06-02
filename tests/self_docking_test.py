@@ -23,5 +23,18 @@ class SelfDockingTest(TestCase):
         self_docking = SelfDocking(protein, ligand, self.tmp_dir.name, self.config).run()
         self.assertTrue(os.path.exists(self_docking.docked))
 
+    def test_run_with_rmsd_reference(self):
+        """Test self docking run with rmsd reference"""
+        protein = os.path.abspath(os.path.join(BASE_DIR, 'tests', 'test_files', '1cps.pdb'))
+        ligand = os.path.abspath(os.path.join(BASE_DIR, 'tests', 'test_files', '1cps_ligand.sdf'))
+        self_docking = SelfDocking(
+            protein,
+            ligand,
+            self.tmp_dir.name,
+            self.config,
+            rmsd_reference=ligand
+        ).run()
+        self.assertTrue(os.path.exists(self_docking.docked))
+
     def tearDown(self):
         self.tmp_dir.cleanup()

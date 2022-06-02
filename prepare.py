@@ -111,7 +111,7 @@ def main(args):
     logging.basicConfig(level=logging.DEBUG)
     config = configparser.ConfigParser()
     config.read(args.config)
-    preparation = Preparation(args.protein, args.ligand, args.output, config)
+    preparation = Preparation(args.ligand, args.output, config, protein=args.protein)
     preparation.run()
     print(preparation.converted_ligand)
     print(preparation.active_site_mol2)

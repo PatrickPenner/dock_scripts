@@ -44,7 +44,7 @@ class DockingRun(PipelineElement):
             self.docking_in = docking_in
         elif rmsd_reference:
             self.docking_in = os.path.join(BASE_DIR, 'templates', 'FLX_rmsd_reference.in.template')
-        self.rmsd_reference = os.path.abspath(rmsd_reference)
+        self.rmsd_reference = os.path.abspath(rmsd_reference) if rmsd_reference else None
         self.docked_prefix = docked_prefix = os.path.join(self.output, 'docked')
         self.docked = docked_prefix + '_scored.mol2'
 

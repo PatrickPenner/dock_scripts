@@ -8,6 +8,7 @@ from pipeline import BASE_DIR
 from prepare import Preparation
 from prepare_receptor import ReceptorPreparation
 from docking_run import DockingRun
+from rmsd_analysis import RmsdAnalysis
 
 
 class CrossDocking:
@@ -39,10 +40,11 @@ class CrossDocking:
         self.output = os.path.abspath(output)
         self.config = config
         self.docking_in = docking_in
-        self.rmsd_reference = os.path.abspath(rmsd_reference)
+        self.rmsd_reference = os.path.abspath(rmsd_reference) if rmsd_reference else None
         self.__receptor_preparation = None
         self.__ligand_preparation = None
         self.__docking_run = None
+        self.__rmsd_analysis = None
         self.__build_workflow()
 
     def __build_workflow(self):
@@ -69,6 +71,7 @@ class CrossDocking:
             docking_in=self.docking_in,
             rmsd_reference=self.rmsd_reference
         )
+        self.__rmsd_analysis = RmsdAnalysis(self.__docking_run.docked)
 
     @property
     def docked(self):
@@ -93,6 +96,14 @@ class CrossDocking:
         # docking run is always rerun
         logging.info('docking')
         self.__docking_run.run()
+
+        if self.rmsd_reference:
+            self.__rmsd_analysis.run()
+            logging.debug('top pose HA_RMSDs: %f', self.__rmsd_analysis.top_rmsd_s)
+            logging.debug('top pose HA_RMSDh: %f', self.__rmsd_analysis.top_rmsd_h)
+            logging.debug('top pose HA_RMSDm: %f', self.__rmsd_analysis.top_rmsd_m)
+            logging.info('top pose rmsd: %f', self.__rmsd_analysis.top_rmsd)
+
         return self
 
 

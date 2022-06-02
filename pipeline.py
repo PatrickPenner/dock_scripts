@@ -5,7 +5,6 @@ import subprocess
 import os
 
 
-# intentionally sparse interface pylint: disable=too-few-public-methods
 class PipelineElement(ABC):
     """Pipeline element abstract class"""
 
@@ -13,8 +12,12 @@ class PipelineElement(ABC):
     def run(self):
         """Run the pipeline element"""
 
+    @abstractmethod
+    def output_exists(self):
+        """Pipeline element output exists"""
+
     @staticmethod
-    def _commandline(args, cwd=None, input=None):  # consistency with subprocess pylint: disable=redefined-builtin
+    def _commandline(args, cwd=None, input=None):
         """run a commandline call from a pipeline element with logging"""
         logging.debug('running: %s', ' '.join(args))
         if cwd:
@@ -24,7 +27,16 @@ class PipelineElement(ABC):
             logging.debug(output.decode('utf8'))
 
     @staticmethod
+    def _files_must_exist(files):
+        """Files exist or exception"""
+        if not PipelineElement._files_exist(files):
+            raise RuntimeError('Did not find expected files')
+
+    @staticmethod
     def _files_exist(files):
+        """Files exist or False"""
         for current_file in files:
             if not os.path.exists(current_file):
-                raise RuntimeError('Did not find expected file: {}'.format(current_file))
+                logging.debug('file: %s does not exist', current_file)
+                return False
+        return True

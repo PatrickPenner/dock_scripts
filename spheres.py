@@ -7,9 +7,9 @@ import os
 from pipeline import PipelineElement
 
 
-# intentionally sparse interface pylint: disable=too-few-public-methods
 class SphereGeneration(PipelineElement):
     """Sphere generation for DOCK workflow"""
+
     def __init__(self, active_site, ligand, output, config):
         """Sphere generation for DOCK workflow
 
@@ -18,24 +18,27 @@ class SphereGeneration(PipelineElement):
         :param output: output directory to write files to
         :param config: config object
         """
-        PipelineElement._files_exist([active_site, ligand])
         self.active_site = active_site
         self.ligand = ligand
         self.output = output
         self.config = config
-        self.selected_spheres = None
-        self.selected_spheres_pdb = None
+        self.selected_spheres = os.path.join(self.output, 'selected_spheres.sph')
+        self.selected_spheres_pdb = os.path.join(self.output, 'selected_spheres.pdb')
 
     def run(self):
         """Run sphere generation"""
+        PipelineElement._files_must_exist([self.active_site, self.ligand])
         if not os.path.exists(self.output):
             os.mkdir(self.output)
 
         surface = self.__generate_surface()
         sphere_clusters = self.__generate_spheres(surface)
-        self.selected_spheres = self.__select_spheres(sphere_clusters)
-        self.selected_spheres_pdb = self.__show_spheres()
+        self.__select_spheres(sphere_clusters)
+        self.__show_spheres()
         return self
+
+    def output_exists(self):
+        return PipelineElement._files_exist([self.selected_spheres, self.selected_spheres_pdb])
 
     def __generate_surface(self):
         surface = os.path.join(self.output, 'rec.ms')
@@ -48,7 +51,7 @@ class SphereGeneration(PipelineElement):
             '-o', surface
         ]
         PipelineElement._commandline(args)
-        PipelineElement._files_exist([surface])
+        PipelineElement._files_must_exist([surface])
         return surface
 
     def __generate_spheres(self, surface):
@@ -68,14 +71,13 @@ class SphereGeneration(PipelineElement):
             os.remove(outsph)
             os.remove(sphere_clusters)
         PipelineElement._commandline([self.config['Binaries']['sphgen']], self.output)
-        PipelineElement._files_exist([outsph, sphere_clusters])
+        PipelineElement._files_must_exist([outsph, sphere_clusters])
         # logging for sphgen is written to OUTSPH, log it to debug
         with open(outsph) as outsph_file:
             logging.debug(outsph_file.read())
         return sphere_clusters
 
     def __select_spheres(self, sphere_clusters):
-        selected_spheres = os.path.join(self.output, 'selected_spheres.sph')
         args = [
             self.config['Binaries']['sphere_selector'],
             sphere_clusters,
@@ -83,23 +85,21 @@ class SphereGeneration(PipelineElement):
             self.config['Parameters']['sphere_radius']
         ]
         PipelineElement._commandline(args, cwd=self.output)
-        PipelineElement._files_exist([selected_spheres])
-        return selected_spheres
+        PipelineElement._files_must_exist([self.selected_spheres])
 
     def __show_spheres(self):
-        selected_spheres_pdb = os.path.join(self.output, 'selected_spheres.pdb')
         with open('templates/show_spheres.in.template') as show_spheres_template:
             show_spheres = show_spheres_template.read()
         show_spheres = show_spheres.format(
             selected_spheres=self.selected_spheres,
-            selected_spheres_pdb=selected_spheres_pdb
+            selected_spheres_pdb=self.selected_spheres_pdb
         )
+        logging.debug(show_spheres)
         PipelineElement._commandline(
             [self.config['Binaries']['showsphere']],
             input=bytes(show_spheres, 'utf8')
         )
-        PipelineElement._files_exist([selected_spheres_pdb])
-        return selected_spheres_pdb
+        PipelineElement._files_must_exist([self.selected_spheres_pdb])
 
 
 def main(args):

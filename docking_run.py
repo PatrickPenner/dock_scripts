@@ -7,11 +7,9 @@ import os
 from pipeline import PipelineElement
 
 
-# intentionally sparse interface pylint: disable=too-few-public-methods
 class DockingRun(PipelineElement):
     """Docking run using DOCK"""
 
-    # prefer to explicitly list these arguments instead of putting them in config pylint: disable=too-many-arguments
     def __init__(self, ligand, spheres, grid, output, config):
         """Docking run using DOCK
 
@@ -21,21 +19,21 @@ class DockingRun(PipelineElement):
         :param output: output directory to write to
         :param config: config object
         """
-        # grid is a prefix not a file
-        PipelineElement._files_exist([ligand, spheres])
         self.ligand = ligand
         self.spheres = spheres
         self.grid = grid
         self.output = output
         self.config = config
-        self.docked = None
+        self.docked_prefix = docked_prefix = os.path.join(self.output, 'docked')
+        self.docked = docked_prefix + '_scored.mol2'
 
     def run(self):
         """Run docking"""
+        # grid is a prefix not a file
+        PipelineElement._files_must_exist([self.ligand, self.spheres])
         if not os.path.exists(self.output):
             os.mkdir(self.output)
 
-        docked_prefix = os.path.join(self.output, 'docked')
         with open('templates/anchor_and_grow.in.template') as dock_template:
             dock_in = dock_template.read()
         dock_in = dock_in.format(
@@ -45,7 +43,7 @@ class DockingRun(PipelineElement):
             vdw=self.config['Parameters']['vdw'],
             flex=self.config['Parameters']['flex'],
             flex_drive=self.config['Parameters']['flex_drive'],
-            docked_prefix=docked_prefix
+            docked_prefix=self.docked_prefix
         )
         dock_in_path = os.path.join(self.output, 'dock.in')
         with open(dock_in_path, 'w') as dock_in_file:
@@ -55,9 +53,11 @@ class DockingRun(PipelineElement):
             '-i', dock_in_path
         ]
         PipelineElement._commandline(args)
-        self.docked = docked_prefix + '_scored.mol2'
-        PipelineElement._files_exist([self.docked])
+        PipelineElement._files_must_exist([self.docked])
         return self
+
+    def output_exists(self):
+        return PipelineElement._files_exist([self.docked])
 
 
 def main(args):

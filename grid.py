@@ -7,7 +7,6 @@ import os
 from pipeline import PipelineElement
 
 
-# intentionally sparse interface pylint: disable=too-few-public-methods
 class GridGeneration(PipelineElement):
     """Grid generation for DOCK workflow"""
 
@@ -19,21 +18,26 @@ class GridGeneration(PipelineElement):
         :param output: output directory to write to
         :param config: config object
         """
-        PipelineElement._files_exist([active_site, spheres])
         self.active_site = active_site
         self.spheres = spheres
         self.output = output
         self.config = config
-        self.grid_prefix = None
+        self.grid_prefix = os.path.join(self.output, 'grid')
+        self.energy_grid = self.grid_prefix + '.nrg'
+        self.bump_grid = self.grid_prefix + '.bmp'
 
     def run(self):
         """Run grid generation"""
+        PipelineElement._files_must_exist([self.active_site, self.spheres])
         if not os.path.exists(self.output):
             os.mkdir(self.output)
 
         box = self.__create_box()
-        self.grid_prefix = self.__create_grid(box)
+        self.__create_grid(box)
         return self
+
+    def output_exists(self):
+        return PipelineElement._files_exist([self.energy_grid, self.bump_grid])
 
     def __create_box(self):
         box = os.path.join(self.output, 'box.pdb')
@@ -48,18 +52,17 @@ class GridGeneration(PipelineElement):
             [self.config['Binaries']['showbox']],
             input=bytes(box_in, 'utf8')
         )
-        PipelineElement._files_exist([box])
+        PipelineElement._files_must_exist([box])
         return box
 
     def __create_grid(self, box):
-        grid = os.path.join(self.output, 'grid')
         with open('templates/grid.in.template') as grid_template:
             grid_in = grid_template.read()
         grid_in = grid_in.format(
             active_site=self.active_site,
             box=box,
             vdw=self.config['Parameters']['vdw'],
-            grid=grid
+            grid=self.grid_prefix
         )
         grid_in_path = os.path.join(self.output, 'grid.in')
         with open(grid_in_path, 'w') as grid_in_file:
@@ -69,8 +72,7 @@ class GridGeneration(PipelineElement):
             '-i', grid_in_path
         ]
         PipelineElement._commandline(args)
-        PipelineElement._files_exist([grid + '.bmp', grid + '.nrg'])
-        return grid
+        PipelineElement._files_must_exist([self.energy_grid, self.bump_grid])
 
 
 def main(args):

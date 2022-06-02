@@ -7,8 +7,6 @@ import os
 from pipeline import PipelineElement
 
 
-# intentionally sparse interface with a number of parameters
-# pylint: disable=too-few-public-methods too-many-instance-attributes too-many-arguments
 class Preparation(PipelineElement):
     """Protein-ligand preparation for a DOCK workflow"""
 
@@ -17,21 +15,16 @@ class Preparation(PipelineElement):
 
         Protein and ligand will be processed into a protonated active site
         of 15Å around the ligand in MOL2 format and a protonated ligand in
-        MOL2 format.
+        MOL2 format. If only a protein is given the protein will be protonated.
+        If only a ligand is given the ligand will be protonated and converted.
 
         :param protein: path to the protein as PDB
         :param ligand: path to the ligand as SDF
         :param output: output directory for final and intermediate files
         :param config: config object
         """
-        files = []
         if not protein and not ligand:
             raise RuntimeError('Either protein or ligand or both are required')
-        if protein:
-            files.append(protein)
-        if ligand:
-            files.append(ligand)
-        PipelineElement._files_exist(files)
         self.protein = protein
         self.name = 'prepared'
         if name:
@@ -41,24 +34,42 @@ class Preparation(PipelineElement):
         self.ligand = ligand
         self.output = output
         self.config = config
-        self.active_site_pdb = None
-        self.active_site_mol2 = None
-        self.converted_ligand = None
+        self.active_site_pdb = os.path.join(self.output, self.name + '_active_site.pdb')
+        self.active_site_mol2 = os.path.join(self.output, self.name + '_active_site.mol2')
+        self.converted_ligand = os.path.join(self.output, self.name + '_ligand_h.mol2')
 
     def run(self):
         """Run protein-ligand preparation"""
+        files = []
+        if self.protein:
+            files.append(self.protein)
+        if self.ligand:
+            files.append(self.ligand)
+        PipelineElement._files_must_exist(files)
         if not os.path.exists(self.output):
             os.mkdir(self.output)
 
         if self.protein and self.ligand:
             self.protein, self.ligand = self.__run_protoss()
             self.protein = self.__clean_binding_site()
-            self.active_site_pdb, self.active_site_mol2 = self.__write_active_site()
+            self.__write_active_site()
         if self.protein and not self.ligand:
             self.protein, self.ligand = self.__run_protoss()
         if self.ligand:
-            self.converted_ligand = self.__convert_ligand()
+            self.__convert_ligand()
         return self
+
+    def output_exists(self):
+        """Get the output of the protein-ligand preparation"""
+        if self.protein and self.ligand:
+            return PipelineElement._files_exist(
+                [self.active_site_pdb, self.active_site_mol2, self.converted_ligand]
+            )
+        if self.protein:
+            return PipelineElement._files_exist([self.protein])
+        if self.ligand:
+            return PipelineElement._files_exist([self.converted_ligand])
+        return False
 
     def __run_protoss(self):
         protonated_protein = os.path.join(self.output, self.name + '_h.pdb')
@@ -79,7 +90,7 @@ class Preparation(PipelineElement):
         files = [protonated_protein]
         if protonated_ligand:
             files.append(protonated_ligand)
-        PipelineElement._files_exist(files)
+        PipelineElement._files_must_exist(files)
         return protonated_protein, protonated_ligand
 
     def __clean_binding_site(self):
@@ -91,21 +102,19 @@ class Preparation(PipelineElement):
             '-c', clean_protein
         ]
         PipelineElement._commandline(args)
-        PipelineElement._files_exist([clean_protein])
+        PipelineElement._files_must_exist([clean_protein])
         return clean_protein
 
     def __write_active_site(self):
         # I wrote a python script in a python script so I could write python while I write python
-        active_site_pdb = os.path.join(self.output, self.name + '_active_site.pdb')
-        active_site_mol2 = os.path.join(self.output, self.name + '_active_site.mol2')
         with open('templates/write_active_site.py.template') as script_template:
             script = script_template.read()
         script = script.format(
             protein=self.protein,
             ligand=self.ligand if self.ligand else '',
             radius=self.config['Parameters']['active_site_radius'],
-            active_site_pdb=active_site_pdb,
-            active_site_mol2=active_site_mol2
+            active_site_pdb=self.active_site_pdb,
+            active_site_mol2=self.active_site_mol2
         )
         script_path = os.path.join(self.output, 'write_active_site.py')
         logging.debug(script)
@@ -117,19 +126,16 @@ class Preparation(PipelineElement):
             script_path
         ]
         PipelineElement._commandline(args)
-        PipelineElement._files_exist([active_site_pdb, active_site_mol2])
-        return active_site_pdb, active_site_mol2
+        PipelineElement._files_must_exist([self.active_site_pdb, self.active_site_mol2])
 
     def __convert_ligand(self):
-        converted_ligand = os.path.join(self.output, self.name + '_ligand_h.mol2')
         args = [
             self.config['Binaries']['unicon'],
             '-i', self.ligand,
-            '-o', converted_ligand
+            '-o', self.converted_ligand
         ]
         PipelineElement._commandline(args)
-        PipelineElement._files_exist([converted_ligand])
-        return converted_ligand
+        PipelineElement._files_must_exist([self.converted_ligand])
 
 
 def main(args):

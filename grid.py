@@ -26,7 +26,7 @@ class GridGeneration(PipelineElement):
         self.energy_grid = self.grid_prefix + '.nrg'
         self.bump_grid = self.grid_prefix + '.bmp'
 
-    def run(self):
+    def run(self, _recalc=False):
         """Run grid generation"""
         PipelineElement._files_must_exist([self.active_site, self.spheres])
         if not os.path.exists(self.output):

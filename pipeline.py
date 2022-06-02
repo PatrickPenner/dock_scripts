@@ -9,7 +9,7 @@ class PipelineElement(ABC):
     """Pipeline element abstract class"""
 
     @abstractmethod
-    def run(self):
+    def run(self, recalc=False):
         """Run the pipeline element"""
 
     @abstractmethod

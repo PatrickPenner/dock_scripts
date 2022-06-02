@@ -38,7 +38,7 @@ class Preparation(PipelineElement):
         self.active_site_mol2 = os.path.join(self.output, self.name + '_active_site.mol2')
         self.converted_ligand = os.path.join(self.output, self.name + '_ligand_h.mol2')
 
-    def run(self):
+    def run(self, _recalc=False):
         """Run protein-ligand preparation"""
         files = []
         if self.protein:

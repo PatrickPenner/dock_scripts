@@ -4,9 +4,7 @@ import configparser
 import logging
 import os
 
-from prepare import Preparation
-from spheres import SphereGeneration
-from grid import GridGeneration
+from prepare_receptor import ReceptorPreparation
 from docking_run import DockingRun
 
 
@@ -25,44 +23,31 @@ class SelfDocking:
         self.ligand = ligand
         self.output = output
         self.config = config
-        self.docked = None
-        self.__preparation = None
-        self.__sphere_generation = None
-        self.__grid_generation = None
+        self.__receptor_preparation = None
         self.__docking_run = None
         self.__build_workflow()
 
     def __build_workflow(self):
-        preparation_dir = os.path.join(self.output, 'prepare')
-        self.__preparation = Preparation(
+        preparation_dir = os.path.join(self.output, 'receptor')
+        self.__receptor_preparation = ReceptorPreparation(
+            self.protein,
+            self.ligand,
             preparation_dir,
-            self.config,
-            protein=self.protein,
-            ligand=self.ligand
-        )
-        sphere_generation_dir = os.path.join(self.output, 'spheres')
-        self.__sphere_generation = SphereGeneration(
-            self.__preparation.active_site_pdb,
-            self.__preparation.converted_ligand,
-            sphere_generation_dir,
-            self.config
-        )
-        grid_generation_dir = os.path.join(self.output, 'grid')
-        self.__grid_generation = GridGeneration(
-            self.__preparation.active_site_mol2,
-            self.__sphere_generation.selected_spheres,
-            grid_generation_dir,
             self.config
         )
         docking_dir = os.path.join(self.output, 'dock')
         self.__docking_run = DockingRun(
-            self.__preparation.converted_ligand,
-            self.__sphere_generation.selected_spheres,
-            self.__grid_generation.grid_prefix,
+            self.__receptor_preparation.converted_ligand,
+            self.__receptor_preparation.selected_spheres,
+            self.__receptor_preparation.grid_prefix,
             docking_dir,
             self.config
         )
-        self.docked = self.__docking_run.docked
+
+    @property
+    def docked(self):
+        """get docking run docked"""
+        return self.__docking_run.docked
 
     def run(self, recalc=False):
         """Run self-docking
@@ -72,17 +57,8 @@ class SelfDocking:
         if not os.path.exists(self.output):
             os.mkdir(self.output)
 
-        logging.info('preparation')
-        if recalc or not self.__preparation.output_exists():
-            self.__preparation.run()
-
-        logging.info('sphere generation')
-        if recalc or not self.__sphere_generation.output_exists():
-            self.__sphere_generation.run()
-
-        logging.info('grid generation')
-        if recalc or not self.__grid_generation.output_exists():
-            self.__grid_generation.run()
+        logging.info('receptor preparation')
+        self.__receptor_preparation.run(recalc)
 
         # docking run is always rerun
         logging.info('docking')

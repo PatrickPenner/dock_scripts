@@ -27,7 +27,7 @@ class DockingRun(PipelineElement):
         self.docked_prefix = docked_prefix = os.path.join(self.output, 'docked')
         self.docked = docked_prefix + '_scored.mol2'
 
-    def run(self):
+    def run(self, _recalc=False):
         """Run docking"""
         # grid is a prefix not a file
         PipelineElement._files_must_exist([self.ligand, self.spheres])

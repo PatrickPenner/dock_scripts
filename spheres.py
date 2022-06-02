@@ -25,7 +25,7 @@ class SphereGeneration(PipelineElement):
         self.selected_spheres = os.path.join(self.output, 'selected_spheres.sph')
         self.selected_spheres_pdb = os.path.join(self.output, 'selected_spheres.pdb')
 
-    def run(self):
+    def run(self, _recalc=False):
         """Run sphere generation"""
         PipelineElement._files_must_exist([self.active_site, self.ligand])
         if not os.path.exists(self.output):
@@ -91,13 +91,14 @@ class SphereGeneration(PipelineElement):
         with open('templates/show_spheres.in.template') as show_spheres_template:
             show_spheres = show_spheres_template.read()
         show_spheres = show_spheres.format(
-            selected_spheres=self.selected_spheres,
-            selected_spheres_pdb=self.selected_spheres_pdb
+            selected_spheres=os.path.basename(self.selected_spheres),
+            selected_spheres_pdb=os.path.basename(self.selected_spheres_pdb)
         )
         logging.debug(show_spheres)
         PipelineElement._commandline(
             [self.config['Binaries']['showsphere']],
-            input=bytes(show_spheres, 'utf8')
+            input=bytes(show_spheres, 'utf8'),
+            cwd=self.output
         )
         PipelineElement._files_must_exist([self.selected_spheres_pdb])
 
